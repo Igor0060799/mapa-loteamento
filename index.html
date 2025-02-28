@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mapa de Implantação</title>
+    <title>Mapa de Disponibilidade</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -21,10 +21,10 @@
         }
         .bolinha {
             position: absolute;
-            width: 7px;
-            height: 7px;
+            width: 10px;
+            height: 10px;
             border-radius: 50%;
-            border: 1px solid gray; /* Bordas finas para visibilidade */
+            cursor: pointer;
         }
         .verde { background-color: green; }
         .laranja { background-color: orange; }
@@ -33,7 +33,7 @@
 </head>
 <body>
 
-    <h1>Mapa de Implantação</h1>
+    <h1>Mapa de Disponibilidade</h1>
 
     <div id="mapa-container">
         <img id="mapa" src="implantacao.png" alt="Mapa de Implantação">
@@ -42,26 +42,38 @@
     <script>
         const API_URL = "https://script.google.com/macros/s/AKfycbzL2zXBQFJq1oTUbP2jZeOvpKqJnD4NI1b_dx8vhTTD_Omp9TolsP9-CyH8db-btd7mow/exec";
 
-        async function carregarMapa() {
-            const response = await fetch(API_URL);
-            const data = await response.json();
+        async function carregarBolinhas() {
+            try {
+                const response = await fetch(API_URL);
+                const data = await response.json();
 
-            data.forEach(lote => {
-                let bolinha = document.createElement("div");
-                bolinha.classList.add("bolinha");
-                bolinha.style.left = lote.x + "px";
-                bolinha.style.top = lote.y + "px";
+                let mapa = document.getElementById("mapa-container");
 
-                let cor = "verde";
-                if (lote.status === "Vendido") cor = "vermelho";
-                else if (lote.status === "Reservado") cor = "laranja";
+                data.forEach(lote => {
+                    let quadra = lote[0];
+                    let loteNum = lote[1];
+                    let status = lote[2];
+                    let xPercent = lote[3];
+                    let yPercent = lote[4];
 
-                bolinha.classList.add(cor);
-                document.getElementById("mapa-container").appendChild(bolinha);
-            });
+                    let bolinha = document.createElement("div");
+                    bolinha.classList.add("bolinha");
+
+                    if (status === "disponível") bolinha.classList.add("verde");
+                    else if (status === "reservado") bolinha.classList.add("laranja");
+                    else bolinha.classList.add("vermelho");
+
+                    bolinha.style.left = `${xPercent}%`;
+                    bolinha.style.top = `${yPercent}%`;
+
+                    mapa.appendChild(bolinha);
+                });
+            } catch (error) {
+                console.error("Erro ao carregar dados:", error);
+            }
         }
 
-        carregarMapa();
+        carregarBolinhas();
     </script>
 
 </body>
