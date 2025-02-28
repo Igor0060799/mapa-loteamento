@@ -24,14 +24,27 @@
             width: 10px;
             height: 10px;
             border-radius: 50%;
-            border: 1px solid black;
             cursor: pointer;
+            border: 1px solid black;
+            transform: translate(-50%, -50%);
         }
         .verde { background-color: green; }
         .laranja { background-color: orange; }
         .vermelho { background-color: red; }
         #config-form {
             margin-top: 20px;
+        }
+        table {
+            width: 100%;
+            margin-top: 20px;
+            border-collapse: collapse;
+        }
+        table, th, td {
+            border: 1px solid black;
+        }
+        th, td {
+            padding: 10px;
+            text-align: center;
         }
     </style>
 </head>
@@ -56,6 +69,17 @@
         <button onclick="excluirBolinha()">Excluir Bolinha</button>
     </div>
 
+    <table>
+        <thead>
+            <tr>
+                <th>Quadra</th>
+                <th>Lote</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody id="tabela-lotes"></tbody>
+    </table>
+
     <script>
         let bolinhaAtual = null;
         const API_URL = "https://script.google.com/macros/s/AKfycbzL2zXBQFJq1oTUbP2jZeOvpKqJnD4NI1b_dx8vhTTD_Omp9TolsP9-CyH8db-btd7mow/exec";
@@ -64,30 +88,28 @@
             let mapa = document.getElementById("mapa-container");
             let bolinha = document.createElement("div");
             bolinha.classList.add("bolinha", "verde");
-            bolinha.style.left = "50%";
-            bolinha.style.top = "50%";
+            bolinha.style.left = "400px";
+            bolinha.style.top = "300px";
             bolinha.draggable = true;
 
-            bolinha.addEventListener("dragstart", (event) => {
-                event.dataTransfer.setData("text/plain", null);
+            bolinha.addEventListener("mousedown", (event) => {
                 bolinhaAtual = bolinha;
+                document.addEventListener("mousemove", moverBolinha);
+            });
+
+            document.addEventListener("mouseup", () => {
+                document.removeEventListener("mousemove", moverBolinha);
             });
 
             mapa.appendChild(bolinha);
         }
 
-        document.getElementById("mapa-container").addEventListener("dragover", (event) => {
-            event.preventDefault();
-        });
-
-        document.getElementById("mapa-container").addEventListener("drop", (event) => {
-            event.preventDefault();
-            if (bolinhaAtual) {
-                let rect = event.target.getBoundingClientRect();
-                bolinhaAtual.style.left = `${event.clientX - rect.left}px`;
-                bolinhaAtual.style.top = `${event.clientY - rect.top}px`;
-            }
-        });
+        function moverBolinha(event) {
+            if (!bolinhaAtual) return;
+            let rect = document.getElementById("mapa").getBoundingClientRect();
+            bolinhaAtual.style.left = `${event.clientX - rect.left}px`;
+            bolinhaAtual.style.top = `${event.clientY - rect.top}px`;
+        }
 
         function salvarCoordenadas() {
             if (!bolinhaAtual) {
