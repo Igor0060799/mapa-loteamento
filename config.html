@@ -18,7 +18,6 @@
             width: 100%;
             max-width: 800px;
             border: 2px solid #ccc;
-            cursor: crosshair;
         }
         .bolinha {
             position: absolute;
@@ -26,7 +25,7 @@
             height: 10px;
             border-radius: 50%;
             border: 2px solid #000;
-            cursor: pointer;
+            cursor: grab;
         }
         .verde { background-color: green; }
         .laranja { background-color: orange; }
@@ -42,11 +41,27 @@
             border: 1px solid #ccc;
             box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.2);
         }
+        table {
+            width: 80%;
+            margin: 20px auto;
+            border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid #ccc;
+            padding: 5px;
+            text-align: center;
+        }
+        th {
+            background-color: #f4f4f4;
+        }
     </style>
 </head>
 <body>
 
     <h1>Configuração do Mapa</h1>
+
+    <button onclick="gerarBolinha()">Gerar Bolinha</button>
+    <button onclick="excluirBolinha()">Excluir Bolinha Selecionada</button>
 
     <div id="mapa-container">
         <img id="mapa" src="implantacao.png" alt="Mapa de Implantação">
@@ -62,14 +77,23 @@
         <button onclick="confirmarBolinha()">Confirmar</button>
     </div>
 
+    <!-- Tabela para visualizar bolinhas salvas -->
+    <table>
+        <thead>
+            <tr>
+                <th>Quadra</th>
+                <th>Lote</th>
+                <th>Status</th>
+                <th>Ação</th>
+            </tr>
+        </thead>
+        <tbody id="tabela-bolinhas"></tbody>
+    </table>
+
     <script>
         const API_URL = "https://script.google.com/macros/s/AKfycbzL2zXBQFJq1oTUbP2jZeOvpKqJnD4NI1b_dx8vhTTD_Omp9TolsP9-CyH8db-btd7mow/exec";
+        let bolinhaSelecionada = null;
 
-        let quadraSelecionada = "";
-        let loteSelecionado = "";
-        let posicaoClicada = { x: 0, y: 0 };
-
-        // Carregar Quadras e Lotes da API
         async function carregarQuadrasELotes() {
             try {
                 const response = await fetch(API_URL);
@@ -77,15 +101,26 @@
 
                 let quadras = new Set();
                 let lotes = {};
+                let tabela = document.getElementById("tabela-bolinhas");
+                tabela.innerHTML = "";
 
                 data.forEach(lote => {
                     let quadra = lote.quadra;
                     let loteNum = lote.lote;
+                    let status = lote.status;
 
                     if (quadra && loteNum) {
                         quadras.add(quadra);
                         if (!lotes[quadra]) lotes[quadra] = [];
-                        lotes[quadra].push(loteNum);
+                        lotes[quadra].push({ lote: loteNum, status });
+
+                        let row = `<tr onclick="selecionarBolinha('${quadra}', '${loteNum}')">
+                            <td>${quadra}</td>
+                            <td>${loteNum}</td>
+                            <td>${status}</td>
+                            <td><button onclick="excluirBolinha('${quadra}', '${loteNum}')">Excluir</button></td>
+                        </tr>`;
+                        tabela.innerHTML += row;
                     }
                 });
 
@@ -108,8 +143,8 @@
                     if (lotes[quadraSelecionada]) {
                         lotes[quadraSelecionada].forEach(lote => {
                             let option = document.createElement("option");
-                            option.value = lote;
-                            option.textContent = lote;
+                            option.value = lote.lote;
+                            option.textContent = lote.lote;
                             loteSelect.appendChild(option);
                         });
                     }
@@ -117,48 +152,59 @@
 
                 quadraSelect.dispatchEvent(new Event("change"));
             } catch (error) {
-                console.error("Erro ao carregar os dados da planilha:", error);
-                alert("Erro ao carregar os dados da API.");
+                console.error("Erro ao carregar dados:", error);
             }
         }
 
-        // Evento de clique no mapa para adicionar uma bolinha
-        document.getElementById("mapa").addEventListener("click", function(event) {
-            let rect = event.target.getBoundingClientRect();
-            posicaoClicada.x = event.clientX - rect.left;
-            posicaoClicada.y = event.clientY - rect.top;
+        function gerarBolinha() {
+            let bolinha = document.createElement("div");
+            bolinha.classList.add("bolinha");
+            bolinha.style.left = "50%";
+            bolinha.style.top = "50%";
+            bolinha.setAttribute("draggable", "true");
 
-            // Exibir pop-up de configuração
-            document.getElementById("config-popup").style.display = "block";
-        });
+            bolinha.addEventListener("dragend", function(event) {
+                bolinha.style.left = event.clientX + "px";
+                bolinha.style.top = event.clientY + "px";
+                document.getElementById("config-popup").style.display = "block";
+                bolinhaSelecionada = bolinha;
+            });
 
-        // Confirmar e adicionar a bolinha ao mapa
+            document.getElementById("mapa-container").appendChild(bolinha);
+        }
+
         function confirmarBolinha() {
-            quadraSelecionada = document.getElementById("quadra").value;
-            loteSelecionado = document.getElementById("lote").value;
+            let quadra = document.getElementById("quadra").value;
+            let lote = document.getElementById("lote").value;
 
-            if (!quadraSelecionada || !loteSelecionado) {
+            if (!quadra || !lote) {
                 alert("Selecione a Quadra e o Lote!");
                 return;
             }
 
-            adicionarBolinha(posicaoClicada.x, posicaoClicada.y, quadraSelecionada, loteSelecionado);
+            let cor = "verde";
+            if (lote.status === "Vendido") cor = "vermelho";
+            else if (lote.status === "Reservado") cor = "laranja";
 
-            // Esconder pop-up
+            bolinhaSelecionada.classList.add(cor);
+            bolinhaSelecionada.setAttribute("data-quadra", quadra);
+            bolinhaSelecionada.setAttribute("data-lote", lote);
+
             document.getElementById("config-popup").style.display = "none";
+
+            fetch(API_URL, {
+                method: "POST",
+                body: JSON.stringify({ quadra, lote, x: bolinhaSelecionada.style.left, y: bolinhaSelecionada.style.top })
+            });
+
+            carregarQuadrasELotes();
         }
 
-        // Adiciona uma bolinha no mapa
-        function adicionarBolinha(x, y, quadra, lote) {
-            let bolinha = document.createElement("div");
-            bolinha.classList.add("bolinha", "verde");
-            bolinha.style.left = x + "px";
-            bolinha.style.top = y + "px";
-            bolinha.title = `Quadra: ${quadra}, Lote: ${lote}`;
-
-            document.getElementById("mapa-container").appendChild(bolinha);
-
-            console.log(`Bolinha adicionada: Quadra ${quadra}, Lote ${lote} em (${x}, ${y})`);
+        function excluirBolinha() {
+            if (bolinhaSelecionada) {
+                bolinhaSelecionada.remove();
+                bolinhaSelecionada = null;
+            }
         }
 
         carregarQuadrasELotes();
