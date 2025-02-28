@@ -1,49 +1,30 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mapa de Disponibilidade</title>
     <style>
-        body { text-align: center; font-family: Arial, sans-serif; }
-        #mapa { position: relative; width: 100%; max-width: 800px; margin: auto; }
         .bolinha {
             position: absolute;
-            width: 20px;
-            height: 20px;
+            width: 7px; /* 70% menor */
+            height: 7px; /* 70% menor */
             border-radius: 50%;
-            border: 2px solid white;
-            cursor: pointer;
         }
+        .verde { background-color: green; }
+        .vermelho { background-color: red; }
+        .laranja { background-color: orange; }
     </style>
 </head>
-<body>
+<body onload="carregarMapa()">
     <h1>Mapa de Disponibilidade</h1>
-    <div id="mapa">
-        <img src="implantacao.png" style="width: 100%;">
+    <div id="mapa-container" style="position: relative;">
+        <img src="mapa.png" width="800" id="mapa">
     </div>
+    <script src="script.js"></script>
+</body>
+</html>
 
-    <script>
-        async function carregarLotes() {
-            const apiUrl = "SUA_API_URL_AQUI"; // Substitua pela URL da API
-            const response = await fetch(apiUrl);
-            const data = await response.json();
-            const mapa = document.getElementById("mapa");
-
-            data.lotes.forEach(lote => {
-                if (lote.x && lote.y) {
-                    let cor = lote.status === "vendido" ? "red" :
-                              lote.status === "disponivel" ? "green" : "orange";
-
-                    let bolinha = document.createElement("div");
-                    bolinha.className = "bolinha";
-                    bolinha.style.backgroundColor = cor;
-                    bolinha.style.left = `${lote.x}px`;
-                    bolinha.style.top = `${lote.y}px`;
-                    mapa.appendChild(bolinha);
-                }
-            });
-        }
 
         carregarLotes();
     </script>
