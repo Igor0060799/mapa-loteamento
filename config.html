@@ -21,7 +21,7 @@
         }
         .bolinha {
             position: absolute;
-            width: 7px;  /* Reduzi em 50% */
+            width: 7px;
             height: 7px;
             border-radius: 50%;
             cursor: grab;
@@ -113,24 +113,40 @@
         }
 
         async function salvarCoordenadas() {
-            let quadra = document.getElementById("quadra").value;
-            let lote = document.getElementById("lote").value;
+            let quadra = document.getElementById("quadra").value.trim();
+            let lote = document.getElementById("lote").value.trim();
+
             if (!quadra || !lote) {
-                alert("Digite a Quadra e o Lote!");
+                alert("⚠️ Digite a Quadra e o Lote!");
                 return;
             }
 
             let x = parseInt(bolinhaSelecionada.style.left);
             let y = parseInt(bolinhaSelecionada.style.top);
 
-            const response = await fetch(API_URL, {
-                method: "POST",
-                body: JSON.stringify({ quadra, lote, x, y }),
-                headers: { "Content-Type": "application/json" }
-            });
+            let dados = { quadra, lote, x, y };
 
-            alert("Bolinha salva! Quadra: " + quadra + ", Lote: " + lote);
-            document.getElementById("popup").style.display = "none";
+            try {
+                console.log("📡 Enviando dados para API:", dados);
+                let response = await fetch(API_URL, {
+                    method: "POST",
+                    body: JSON.stringify(dados),
+                    headers: { "Content-Type": "application/json" }
+                });
+
+                let resultado = await response.json();
+                console.log("✅ Resposta da API:", resultado);
+
+                if (resultado.status === "sucesso") {
+                    alert("✔️ Coordenadas salvas com sucesso!");
+                    document.getElementById("popup").style.display = "none";
+                } else {
+                    alert("❌ Erro ao salvar coordenadas!");
+                }
+            } catch (error) {
+                console.error("❌ Erro na requisição:", error);
+                alert("⚠️ Erro ao conectar com a API!");
+            }
         }
 
         function excluirBolinha() {
