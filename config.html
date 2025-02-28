@@ -18,10 +18,11 @@
             width: 100%;
             max-width: 800px;
             border: 2px solid #ccc;
+            cursor: crosshair;
         }
         .bolinha {
             position: absolute;
-            width: 10px; /* Tamanho reduzido em 70% */
+            width: 10px;
             height: 10px;
             border-radius: 50%;
             border: 2px solid #000;
@@ -30,8 +31,16 @@
         .verde { background-color: green; }
         .laranja { background-color: orange; }
         .vermelho { background-color: red; }
-        #config-form {
-            margin-top: 20px;
+        #config-popup {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 15px;
+            border: 1px solid #ccc;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.2);
         }
     </style>
 </head>
@@ -43,33 +52,35 @@
         <img id="mapa" src="implantacao.png" alt="Mapa de Implantação">
     </div>
 
-    <div id="config-form">
+    <!-- Pop-up para selecionar Quadra e Lote -->
+    <div id="config-popup">
+        <h3>Selecionar Quadra e Lote</h3>
         <label for="quadra">Quadra:</label>
         <select id="quadra"></select>
-
         <label for="lote">Lote:</label>
         <select id="lote"></select>
-
-        <button onclick="salvarCoordenadas()">Salvar</button>
+        <button onclick="confirmarBolinha()">Confirmar</button>
     </div>
 
     <script>
         const API_URL = "https://script.google.com/macros/s/AKfycbzL2zXBQFJq1oTUbP2jZeOvpKqJnD4NI1b_dx8vhTTD_Omp9TolsP9-CyH8db-btd7mow/exec";
 
+        let quadraSelecionada = "";
+        let loteSelecionado = "";
+        let posicaoClicada = { x: 0, y: 0 };
+
+        // Carregar Quadras e Lotes da API
         async function carregarQuadrasELotes() {
             try {
-                console.log("🔄 Buscando dados da API...");
                 const response = await fetch(API_URL);
                 const data = await response.json();
-
-                console.log("✅ Dados recebidos:", data);
 
                 let quadras = new Set();
                 let lotes = {};
 
                 data.forEach(lote => {
-                    let quadra = lote.quadra;  
-                    let loteNum = lote.lote;   
+                    let quadra = lote.quadra;
+                    let loteNum = lote.lote;
 
                     if (quadra && loteNum) {
                         quadras.add(quadra);
@@ -106,29 +117,48 @@
 
                 quadraSelect.dispatchEvent(new Event("change"));
             } catch (error) {
-                console.error("❌ Erro ao carregar dados:", error);
-                alert("Erro ao carregar os dados da planilha. Verifique a API.");
+                console.error("Erro ao carregar os dados da planilha:", error);
+                alert("Erro ao carregar os dados da API.");
             }
         }
 
-        function salvarCoordenadas() {
-            let quadra = document.getElementById("quadra").value;
-            let lote = document.getElementById("lote").value;
+        // Evento de clique no mapa para adicionar uma bolinha
+        document.getElementById("mapa").addEventListener("click", function(event) {
+            let rect = event.target.getBoundingClientRect();
+            posicaoClicada.x = event.clientX - rect.left;
+            posicaoClicada.y = event.clientY - rect.top;
 
-            if (!quadra || !lote) {
+            // Exibir pop-up de configuração
+            document.getElementById("config-popup").style.display = "block";
+        });
+
+        // Confirmar e adicionar a bolinha ao mapa
+        function confirmarBolinha() {
+            quadraSelecionada = document.getElementById("quadra").value;
+            loteSelecionado = document.getElementById("lote").value;
+
+            if (!quadraSelecionada || !loteSelecionado) {
                 alert("Selecione a Quadra e o Lote!");
                 return;
             }
 
-            let coordenadas = {
-                quadra: quadra,
-                lote: lote,
-                x: Math.random() * 800,  
-                y: Math.random() * 600   
-            };
+            adicionarBolinha(posicaoClicada.x, posicaoClicada.y, quadraSelecionada, loteSelecionado);
 
-            console.log("✅ Coordenadas salvas:", coordenadas);
-            alert("Coordenadas salvas! Ajuste manualmente no mapa.");
+            // Esconder pop-up
+            document.getElementById("config-popup").style.display = "none";
+        }
+
+        // Adiciona uma bolinha no mapa
+        function adicionarBolinha(x, y, quadra, lote) {
+            let bolinha = document.createElement("div");
+            bolinha.classList.add("bolinha", "verde");
+            bolinha.style.left = x + "px";
+            bolinha.style.top = y + "px";
+            bolinha.title = `Quadra: ${quadra}, Lote: ${lote}`;
+
+            document.getElementById("mapa-container").appendChild(bolinha);
+
+            console.log(`Bolinha adicionada: Quadra ${quadra}, Lote ${lote} em (${x}, ${y})`);
         }
 
         carregarQuadrasELotes();
