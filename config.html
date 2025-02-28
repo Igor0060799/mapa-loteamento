@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configuração do Mapa</title>
+    <style>
+        body { text-align: center; font-family: Arial, sans-serif; }
+        #mapa { position: relative; width: 100%; max-width: 800px; margin: auto; cursor: crosshair; }
+        .bolinha {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: 2px solid black;
+            background: yellow;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <h1>Configuração do Mapa</h1>
+    <p>Clique no mapa para adicionar uma bolinha e escolha o lote correspondente.</p>
+    <div id="mapa">
+        <img src="implantacao.png" style="width: 100%;">
+    </div>
+
+    <script>
+        document.getElementById("mapa").addEventListener("click", async function(event) {
+            let x = event.offsetX;
+            let y = event.offsetY;
+
+            let quadra = prompt("Informe a Quadra:");
+            let lote = prompt("Informe o Lote:");
+
+            if (quadra && lote) {
+                let response = await fetch("SUA_API_URL_AQUI", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ quadra, lote, x, y })
+                });
+
+                let result = await response.json();
+                if (result.status === "sucesso") {
+                    alert("Coordenadas salvas!");
+                    location.reload();
+                } else {
+                    alert("Erro ao salvar.");
+                }
+            }
+        });
+    </script>
+</body>
+</html>
