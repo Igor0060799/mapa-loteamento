@@ -21,10 +21,10 @@
         }
         .bolinha {
             position: absolute;
-            width: 15px;
-            height: 15px;
+            width: 4.5px;  /* Reduzido em 70% */
+            height: 4.5px;
             border-radius: 50%;
-            border: 2px solid #000;
+            border: 1px solid #000;
             cursor: pointer;
         }
         .verde { background-color: green; }
@@ -69,7 +69,8 @@
                 let quadras = new Set();
                 let lotes = {};
 
-                data.forEach(lote => {
+                data.forEach((lote, index) => {
+                    if (index === 0) return; // Ignora o cabeçalho
                     let quadra = lote[0];  // Coluna A: Quadra
                     let loteNum = lote[1];  // Coluna B: Lote
 
@@ -83,8 +84,8 @@
                 let quadraSelect = document.getElementById("quadra");
                 let loteSelect = document.getElementById("lote");
 
-                quadraSelect.innerHTML = "";
-                loteSelect.innerHTML = "";
+                quadraSelect.innerHTML = "<option value=''>Selecione</option>";
+                loteSelect.innerHTML = "<option value=''>Selecione</option>";
 
                 quadras.forEach(quadra => {
                     let option = document.createElement("option");
@@ -94,7 +95,7 @@
                 });
 
                 quadraSelect.addEventListener("change", function() {
-                    loteSelect.innerHTML = "";
+                    loteSelect.innerHTML = "<option value=''>Selecione</option>";
                     let quadraSelecionada = quadraSelect.value;
                     if (lotes[quadraSelecionada]) {
                         lotes[quadraSelecionada].forEach(lote => {
@@ -114,7 +115,7 @@
         }
 
         // Salvar coordenadas no banco de dados
-        function salvarCoordenadas() {
+        async function salvarCoordenadas() {
             let quadra = document.getElementById("quadra").value;
             let lote = document.getElementById("lote").value;
 
@@ -130,8 +131,20 @@
                 y: Math.random() * 600   // Exemplo de posição (será ajustado manualmente)
             };
 
-            console.log("✅ Coordenadas salvas:", coordenadas);
-            alert("Coordenadas salvas! Ajuste manualmente no mapa.");
+            try {
+                const response = await fetch(API_URL, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(coordenadas)
+                });
+
+                const result = await response.json();
+                console.log("✅ Coordenadas salvas:", result);
+                alert("Coordenadas salvas com sucesso!");
+            } catch (error) {
+                console.error("❌ Erro ao salvar coordenadas:", error);
+                alert("Erro ao salvar coordenadas. Verifique a API.");
+            }
         }
 
         // Chamar função ao carregar a página
