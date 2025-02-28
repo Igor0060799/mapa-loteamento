@@ -3,36 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mapa de Lotes</title>
+    <title>Mapa de Disponibilidade</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-        }
-        #mapa-container {
-            position: relative;
-            display: inline-block;
-            margin-top: 20px;
-        }
-        #mapa {
-            width: 100%;
-            max-width: 800px;
-            border: 2px solid #ccc;
-        }
+        body { font-family: Arial, sans-serif; text-align: center; }
+        #mapa-container { position: relative; display: inline-block; margin-top: 20px; }
+        #mapa { width: 100%; max-width: 800px; border: 2px solid #ccc; }
         .bolinha {
             position: absolute;
-            width: 15px;
-            height: 15px;
+            width: 10px;
+            height: 10px;
             border-radius: 50%;
-            cursor: pointer;
-            text-align: center;
-            font-size: 10px;
-            color: white;
             display: flex;
-            align-items: center;
             justify-content: center;
-            font-weight: bold;
-            transform: translate(-50%, -50%);
+            align-items: center;
+            font-size: 8px;
+            color: white;
         }
         .verde { background-color: green; }
         .laranja { background-color: orange; }
@@ -41,7 +26,7 @@
 </head>
 <body>
 
-    <h1>Mapa de Lotes</h1>
+    <h1>Mapa de Disponibilidade</h1>
 
     <div id="mapa-container">
         <img id="mapa" src="implantacao.png" alt="Mapa de Implantação">
@@ -51,42 +36,20 @@
         const API_URL = "https://script.google.com/macros/s/AKfycbzL2zXBQFJq1oTUbP2jZeOvpKqJnD4NI1b_dx8vhTTD_Omp9TolsP9-CyH8db-btd7mow/exec";
 
         async function carregarBolinhas() {
-            try {
-                console.log("🔄 Buscando coordenadas da API...");
-                const response = await fetch(API_URL);
-                const data = await response.json();
-                console.log("✅ Coordenadas recebidas:", data);
-
-                let mapaContainer = document.getElementById("mapa-container");
-
-                data.forEach(lote => {
-                    let { quadra, loteNum, status, x, y } = lote;
-                    
-                    let bolinha = document.createElement("div");
-                    bolinha.classList.add("bolinha");
-                    bolinha.textContent = loteNum; // Mostra o número do lote dentro da bolinha
-                    
-                    // Define a cor com base no status
-                    if (status === "Disponível") bolinha.classList.add("verde");
-                    else if (status === "Reservado") bolinha.classList.add("laranja");
-                    else if (status === "Vendido") bolinha.classList.add("vermelho");
-
-                    // Posiciona corretamente no mapa
-                    bolinha.style.left = `${x}px`;
-                    bolinha.style.top = `${y}px`;
-
-                    mapaContainer.appendChild(bolinha);
-                });
-            } catch (error) {
-                console.error("❌ Erro ao carregar coordenadas:", error);
-                alert("Erro ao carregar os lotes do mapa.");
-            }
+            const response = await fetch(API_URL);
+            const data = await response.json();
+            data.forEach(lote => {
+                let bolinha = document.createElement("div");
+                bolinha.classList.add("bolinha", lote[2]); 
+                bolinha.style.left = `${lote[3]}px`; 
+                bolinha.style.top = `${lote[4]}px`;
+                bolinha.textContent = lote[1]; 
+                document.getElementById("mapa-container").appendChild(bolinha);
+            });
         }
 
-        // Carregar bolinhas ao iniciar a página
         carregarBolinhas();
     </script>
 
 </body>
 </html>
-
