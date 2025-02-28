@@ -1,129 +1,58 @@
-<!DOCTYPE html>
-<html lang="pt">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Configurar Mapa</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-        }
-        #mapa-container {
-            position: relative;
-            display: inline-block;
-            margin-top: 20px;
-        }
-        #mapa {
-            width: 100%;
-            max-width: 800px;
-            border: 2px solid #ccc;
-        }
-        .bolinha {
-            position: absolute;
-            width: 8px; /* Reduzido 50% */
-            height: 8px; /* Reduzido 50% */
-            border-radius: 50%;
-            border: 1px solid #000; /* Borda bem fininha */
-            cursor: pointer;
-        }
-        .verde { background-color: green; }
-        .laranja { background-color: orange; }
-        .vermelho { background-color: red; }
-        #config-form {
-            margin-top: 20px;
-        }
-        table {
-            width: 100%;
-            margin-top: 20px;
-            border-collapse: collapse;
-        }
-        th, td {
-            border: 1px solid #ccc;
-            padding: 5px;
-            text-align: center;
-        }
-    </style>
-</head>
-<body>
+async function carregarQuadrasELotes() {
+    try {
+        console.log("🔄 Buscando dados da API...");
+        const response = await fetch(API_URL, { method: "GET", mode: "cors" });
 
-    <h1>Configuração do Mapa</h1>
-    <button onclick="gerarBolinha()">Gerar Bolinha</button>
+        if (!response.ok) {
+            throw new Error(`Erro na requisição: ${response.status}`);
+        }
 
-    <div id="mapa-container">
-        <img id="mapa" src="implantacao.png" alt="Mapa de Implantação">
-    </div>
+        const data = await response.json();
+        console.log("✅ Dados recebidos:", data);
 
-    <table>
-        <thead>
-            <tr>
-                <th>Quadra</th>
-                <th>Lote</th>
-                <th>Status</th>
-            </tr>
-        </thead>
-        <tbody id="tabela-dados"></tbody>
-    </table>
+        let quadras = new Set();
+        let lotes = {};
 
-    <script>
-        const API_URL = "https://script.google.com/macros/s/AKfycbzL2zXBQFJq1oTUbP2jZeOvpKqJnD4NI1b_dx8vhTTD_Omp9TolsP9-CyH8db-btd7mow/exec";
-        let dadosPlanilha = [];
+        data.forEach(lote => {
+            let quadra = lote[0];  // Coluna A: Quadra
+            let loteNum = lote[1];  // Coluna B: Lote
 
-        async function carregarDados() {
-            try {
-                const response = await fetch(API_URL);
-                const data = await response.json();
-                dadosPlanilha = data;
-                atualizarTabela();
-            } catch (error) {
-                console.error("Erro ao carregar dados:", error);
-                alert("Erro ao carregar os dados da planilha.");
+            if (quadra && loteNum) {
+                quadras.add(quadra);
+                if (!lotes[quadra]) lotes[quadra] = [];
+                lotes[quadra].push(loteNum);
             }
-        }
+        });
 
-        function atualizarTabela() {
-            const tabela = document.getElementById("tabela-dados");
-            tabela.innerHTML = "";
-            dadosPlanilha.forEach(dado => {
-                let linha = `<tr>
-                    <td>${dado[0]}</td>
-                    <td>${dado[1]}</td>
-                    <td>${dado[2]}</td>
-                </tr>`;
-                tabela.innerHTML += linha;
-            });
-        }
+        let quadraSelect = document.getElementById("quadra");
+        let loteSelect = document.getElementById("lote");
 
-        function gerarBolinha() {
-            let bolinha = document.createElement("div");
-            bolinha.classList.add("bolinha", "verde");
-            bolinha.style.left = "50%";
-            bolinha.style.top = "50%";
-            bolinha.setAttribute("draggable", true);
-            bolinha.addEventListener("dragend", moverBolinha);
-            bolinha.addEventListener("click", selecionarQuadraLote);
-            document.getElementById("mapa-container").appendChild(bolinha);
-        }
+        quadraSelect.innerHTML = "";
+        loteSelect.innerHTML = "";
 
-        function moverBolinha(event) {
-            let bolinha = event.target;
-            let rect = document.getElementById("mapa").getBoundingClientRect();
-            let x = event.clientX - rect.left;
-            let y = event.clientY - rect.top;
-            bolinha.style.left = `${x}px`;
-            bolinha.style.top = `${y}px`;
-        }
+        quadras.forEach(quadra => {
+            let option = document.createElement("option");
+            option.value = quadra;
+            option.textContent = quadra;
+            quadraSelect.appendChild(option);
+        });
 
-        function selecionarQuadraLote(event) {
-            let quadras = [...new Set(dadosPlanilha.map(d => d[0]))];
-            let quadraSelecionada = prompt("Selecione a quadra:", quadras.join(", "));
-            let lotes = dadosPlanilha.filter(d => d[0] === quadraSelecionada).map(d => d[1]);
-            let loteSelecionado = prompt("Selecione o lote:", lotes.join(", "));
-            alert(`Quadra: ${quadraSelecionada}, Lote: ${loteSelecionado} selecionado!`);
-        }
+        quadraSelect.addEventListener("change", function() {
+            loteSelect.innerHTML = "";
+            let quadraSelecionada = quadraSelect.value;
+            if (lotes[quadraSelecionada]) {
+                lotes[quadraSelecionada].forEach(lote => {
+                    let option = document.createElement("option");
+                    option.value = lote;
+                    option.textContent = lote;
+                    loteSelect.appendChild(option);
+                });
+            }
+        });
 
-        carregarDados();
-    </script>
-
-</body>
-</html>
+        quadraSelect.dispatchEvent(new Event("change"));
+    } catch (error) {
+        console.error("❌ Erro ao carregar dados:", error);
+        alert("Erro ao carregar os dados da planilha.");
+    }
+}
