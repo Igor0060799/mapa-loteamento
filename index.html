@@ -44,17 +44,24 @@
 
         async function carregarBolinhas() {
             try {
+                console.log("🔄 Buscando dados da API...");
                 const response = await fetch(API_URL);
                 const data = await response.json();
+                console.log("✅ Dados recebidos:", data);
 
                 let mapa = document.getElementById("mapa-container");
 
                 data.forEach(lote => {
-                    let quadra = lote[0];
-                    let loteNum = lote[1];
-                    let status = lote[2];
-                    let xPercent = lote[3];
-                    let yPercent = lote[4];
+                    let quadra = lote.quadra;
+                    let loteNum = lote.lote;
+                    let status = lote.status;
+                    let xPercent = lote.x;
+                    let yPercent = lote.y;
+
+                    if (!xPercent || !yPercent) {
+                        console.warn(`❗ Coordenadas inválidas para ${quadra}-${loteNum}`);
+                        return;
+                    }
 
                     let bolinha = document.createElement("div");
                     bolinha.classList.add("bolinha");
@@ -68,8 +75,10 @@
 
                     mapa.appendChild(bolinha);
                 });
+
             } catch (error) {
-                console.error("Erro ao carregar dados:", error);
+                console.error("❌ Erro ao carregar dados:", error);
+                alert("Erro ao carregar os dados do mapa. Verifique a API.");
             }
         }
 
