@@ -21,144 +21,102 @@
         }
         .bolinha {
             position: absolute;
-            width: 7px;
-            height: 7px;
+            width: 10px; /* Reduzida em 50% */
+            height: 10px;
             border-radius: 50%;
+            border: 1px solid black;
             cursor: grab;
-            background-color: green;
-            border: 0.5px solid black;
         }
-        .popup {
-            display: none;
-            position: absolute;
-            background: white;
-            border: 1px solid #ccc;
-            padding: 10px;
-            z-index: 1000;
-        }
-        .botao {
-            margin: 10px;
-            padding: 8px;
-            font-size: 14px;
-            cursor: pointer;
+        .verde { background-color: green; }
+        .laranja { background-color: orange; }
+        .vermelho { background-color: red; }
+        #config-form {
+            margin-top: 20px;
         }
     </style>
 </head>
 <body>
 
     <h1>Configuração do Mapa</h1>
-
-    <button class="botao" onclick="criarBolinha()">Gerar Bolinha</button>
-    <button class="botao" onclick="excluirBolinha()">Excluir Bolinha</button>
+    <button onclick="gerarBolinha()">Gerar Bolinha</button>
+    <button onclick="excluirBolinha()">Excluir Bolinha</button>
 
     <div id="mapa-container">
         <img id="mapa" src="implantacao.png" alt="Mapa de Implantação">
     </div>
 
-    <div id="popup" class="popup">
-        <label for="quadra">Quadra:</label>
-        <input type="text" id="quadra">
-        <label for="lote">Lote:</label>
-        <input type="text" id="lote">
-        <button onclick="salvarCoordenadas()">Salvar</button>
-    </div>
-
     <script>
         const API_URL = "https://script.google.com/macros/s/AKfycbzL2zXBQFJq1oTUbP2jZeOvpKqJnD4NI1b_dx8vhTTD_Omp9TolsP9-CyH8db-btd7mow/exec";
-        let mapaContainer = document.getElementById("mapa-container");
         let bolinhas = [];
-        let bolinhaSelecionada = null;
 
-        function criarBolinha() {
+        function gerarBolinha() {
             let bolinha = document.createElement("div");
-            bolinha.classList.add("bolinha");
+            bolinha.classList.add("bolinha", "verde"); // Cor padrão
+
             bolinha.style.left = "50%";
             bolinha.style.top = "50%";
-            bolinha.style.position = "absolute";
-            bolinha.draggable = false;
-            bolinha.addEventListener("mousedown", iniciarArrasto);
-            mapaContainer.appendChild(bolinha);
+            bolinha.draggable = true;
+            bolinha.addEventListener("mousedown", iniciarArraste);
+
+            document.getElementById("mapa-container").appendChild(bolinha);
             bolinhas.push(bolinha);
         }
 
-        function iniciarArrasto(event) {
-            bolinhaSelecionada = event.target;
-            bolinhaSelecionada.style.cursor = "grabbing";
+        function iniciarArraste(event) {
+            let bolinha = event.target;
+            let shiftX = event.clientX - bolinha.getBoundingClientRect().left;
+            let shiftY = event.clientY - bolinha.getBoundingClientRect().top;
 
-            function moverBolinha(moveEvent) {
-                let mapaRect = mapaContainer.getBoundingClientRect();
-                let x = moveEvent.clientX - mapaRect.left;
-                let y = moveEvent.clientY - mapaRect.top;
-                bolinhaSelecionada.style.left = `${x}px`;
-                bolinhaSelecionada.style.top = `${y}px`;
+            function moverBolinha(event) {
+                bolinha.style.left = event.pageX - shiftX + "px";
+                bolinha.style.top = event.pageY - shiftY + "px";
             }
 
             function soltarBolinha() {
-                bolinhaSelecionada.style.cursor = "grab";
                 document.removeEventListener("mousemove", moverBolinha);
                 document.removeEventListener("mouseup", soltarBolinha);
-                abrirPopUp(bolinhaSelecionada);
+                abrirPopup(bolinha);
             }
 
             document.addEventListener("mousemove", moverBolinha);
             document.addEventListener("mouseup", soltarBolinha);
         }
 
-        function abrirPopUp(bolinha) {
-            let popup = document.getElementById("popup");
-            popup.style.display = "block";
-            popup.style.left = bolinha.style.left;
-            popup.style.top = bolinha.style.top;
-            bolinhaSelecionada = bolinha;
+        function abrirPopup(bolinha) {
+            let quadra = prompt("Digite a quadra:");
+            let lote = prompt("Digite o lote:");
+
+            if (quadra && lote) {
+                salvarCoordenadas(quadra, lote, bolinha);
+            }
         }
 
-        async function salvarCoordenadas() {
-            let quadra = document.getElementById("quadra").value.trim();
-            let lote = document.getElementById("lote").value.trim();
-
-            if (!quadra || !lote) {
-                alert("⚠️ Digite a Quadra e o Lote!");
-                return;
-            }
-
-            let x = parseInt(bolinhaSelecionada.style.left);
-            let y = parseInt(bolinhaSelecionada.style.top);
-
-            let dados = { 
-                action: "salvar", // Definir ação para o Google Apps Script
-                quadra, 
-                lote, 
-                x, 
-                y 
+        async function salvarCoordenadas(quadra, lote, bolinha) {
+            let coordenadas = {
+                quadra: quadra,
+                lote: lote,
+                x: bolinha.style.left,
+                y: bolinha.style.top
             };
 
             try {
-                console.log("📡 Enviando dados para API:", dados);
                 let response = await fetch(API_URL, {
                     method: "POST",
-                    body: JSON.stringify(dados),
+                    body: JSON.stringify(coordenadas),
                     headers: { "Content-Type": "application/json" }
                 });
-
-                let resultado = await response.json();
-                console.log("✅ Resposta da API:", resultado);
-
-                if (resultado.status === "sucesso") {
-                    alert("✔️ Coordenadas salvas com sucesso!");
-                    document.getElementById("popup").style.display = "none";
-                } else {
-                    alert("❌ Erro ao salvar coordenadas! Verifique o Apps Script.");
-                }
+                let result = await response.json();
+                alert(result.mensagem || "Salvo com sucesso!");
             } catch (error) {
-                console.error("❌ Erro na requisição:", error);
-                alert("⚠️ Erro ao conectar com a API!");
+                console.error("Erro ao salvar:", error);
+                alert("Erro ao salvar as coordenadas.");
             }
         }
 
         function excluirBolinha() {
             if (bolinhas.length > 0) {
-                let bolinhaRemovida = bolinhas.pop();
-                bolinhaRemovida.remove();
+                let bolinha = bolinhas.pop();
+                bolinha.remove();
             }
         }
     </script>
