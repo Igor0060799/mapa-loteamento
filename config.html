@@ -1,4 +1,4 @@
-<<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt">
 <head>
     <meta charset="UTF-8">
@@ -21,14 +21,14 @@
         }
         .bolinha {
             position: absolute;
-            width: 10px;
-            height: 10px;
+            width: 7px;  /* Reduzi em 50% */
+            height: 7px;
             border-radius: 50%;
             cursor: grab;
             display: flex;
             justify-content: center;
             align-items: center;
-            font-size: 10px;
+            font-size: 6px;
             color: white;
             border: 0.5px solid black;
         }
@@ -75,51 +75,61 @@
         let mapaContainer = document.getElementById("mapa-container");
         let bolinhas = [];
         let bolinhaSelecionada = null;
+        let quadrasLotes = {}; // Objeto para armazenar os lotes de cada quadra
 
         async function carregarQuadrasELotes() {
-            const response = await fetch(API_URL);
-            const data = await response.json();
+            try {
+                const response = await fetch(API_URL);
+                const data = await response.json();
+
+                let quadraSelect = document.getElementById("quadra");
+                let loteSelect = document.getElementById("lote");
+
+                quadraSelect.innerHTML = "";
+                loteSelect.innerHTML = "";
+
+                quadrasLotes = {}; // Resetar os dados
+
+                data.forEach(lote => {
+                    let quadra = lote[0];
+                    let loteNum = lote[1];
+
+                    if (quadra && loteNum) {
+                        if (!quadrasLotes[quadra]) quadrasLotes[quadra] = [];
+                        quadrasLotes[quadra].push(loteNum);
+                    }
+                });
+
+                Object.keys(quadrasLotes).forEach(quadra => {
+                    let option = document.createElement("option");
+                    option.value = quadra;
+                    option.textContent = quadra;
+                    quadraSelect.appendChild(option);
+                });
+
+                quadraSelect.addEventListener("change", atualizarLotes);
+                atualizarLotes();
+            } catch (error) {
+                console.error("Erro ao carregar quadras e lotes:", error);
+                alert("Erro ao carregar os dados da planilha.");
+            }
+        }
+
+        function atualizarLotes() {
             let quadraSelect = document.getElementById("quadra");
             let loteSelect = document.getElementById("lote");
 
-            let quadras = new Set();
-            let lotes = {};
-
-            data.forEach(lote => {
-                let quadra = lote[0];
-                let loteNum = lote[1];
-
-                if (quadra && loteNum) {
-                    quadras.add(quadra);
-                    if (!lotes[quadra]) lotes[quadra] = [];
-                    lotes[quadra].push(loteNum);
-                }
-            });
-
-            quadraSelect.innerHTML = "";
             loteSelect.innerHTML = "";
 
-            quadras.forEach(quadra => {
-                let option = document.createElement("option");
-                option.value = quadra;
-                option.textContent = quadra;
-                quadraSelect.appendChild(option);
-            });
-
-            quadraSelect.addEventListener("change", function() {
-                loteSelect.innerHTML = "";
-                let quadraSelecionada = quadraSelect.value;
-                if (lotes[quadraSelecionada]) {
-                    lotes[quadraSelecionada].forEach(lote => {
-                        let option = document.createElement("option");
-                        option.value = lote;
-                        option.textContent = lote;
-                        loteSelect.appendChild(option);
-                    });
-                }
-            });
-
-            quadraSelect.dispatchEvent(new Event("change"));
+            let quadraSelecionada = quadraSelect.value;
+            if (quadrasLotes[quadraSelecionada]) {
+                quadrasLotes[quadraSelecionada].forEach(lote => {
+                    let option = document.createElement("option");
+                    option.value = lote;
+                    option.textContent = lote;
+                    loteSelect.appendChild(option);
+                });
+            }
         }
 
         function criarBolinha() {
