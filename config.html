@@ -124,7 +124,13 @@
             let x = parseInt(bolinhaSelecionada.style.left);
             let y = parseInt(bolinhaSelecionada.style.top);
 
-            let dados = { quadra, lote, x, y };
+            let dados = { 
+                action: "salvar", // Definir ação para o Google Apps Script
+                quadra, 
+                lote, 
+                x, 
+                y 
+            };
 
             try {
                 console.log("📡 Enviando dados para API:", dados);
@@ -141,7 +147,7 @@
                     alert("✔️ Coordenadas salvas com sucesso!");
                     document.getElementById("popup").style.display = "none";
                 } else {
-                    alert("❌ Erro ao salvar coordenadas!");
+                    alert("❌ Erro ao salvar coordenadas! Verifique o Apps Script.");
                 }
             } catch (error) {
                 console.error("❌ Erro na requisição:", error);
