@@ -2,7 +2,7 @@ let quadras = [];
 let lotes = {};
 
 async function carregarDados() {
-    const response = await fetch("https://script.google.com/macros/s/YOUR_GOOGLE_SCRIPT_ID/exec");
+    const response = await fetch("https://script.google.com/macros/s/AKfycbzL2zXBQFJq1oTUbP2jZeOvpKqJnD4NI1b_dx8vhTTD_Omp9TolsP9-CyH8db-btd7mow/exec");
     const data = await response.json();
 
     quadras = [...new Set(data.map(item => item.quadra))]; 
@@ -43,7 +43,7 @@ function preencherLotes() {
 }
 
 async function carregarMapa() {
-    const response = await fetch("https://script.google.com/macros/s/YOUR_GOOGLE_SCRIPT_ID/exec");
+    const response = await fetch("https://script.google.com/macros/s/AKfycbzL2zXBQFJq1oTUbP2jZeOvpKqJnD4NI1b_dx8vhTTD_Omp9TolsP9-CyH8db-btd7mow/exec");
     const data = await response.json();
     console.log(data);
 }
