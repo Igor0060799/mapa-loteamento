@@ -52,13 +52,9 @@
                 let mapa = document.getElementById("mapa-container");
 
                 data.forEach(lote => {
-                    let quadra = lote.quadra;
-                    let loteNum = lote.lote;
-                    let status = lote.status;
-                    let xPercent = lote.x;
-                    let yPercent = lote.y;
+                    let { quadra, loteNum, status, x, y } = lote;
 
-                    if (!xPercent || !yPercent) {
+                    if (!x || !y) {
                         console.warn(`❗ Coordenadas inválidas para ${quadra}-${loteNum}`);
                         return;
                     }
@@ -70,8 +66,8 @@
                     else if (status === "reservado") bolinha.classList.add("laranja");
                     else bolinha.classList.add("vermelho");
 
-                    bolinha.style.left = `${xPercent}%`;
-                    bolinha.style.top = `${yPercent}%`;
+                    bolinha.style.left = `${x}px`;
+                    bolinha.style.top = `${y}px`;
 
                     mapa.appendChild(bolinha);
                 });
@@ -87,3 +83,4 @@
 
 </body>
 </html>
+
