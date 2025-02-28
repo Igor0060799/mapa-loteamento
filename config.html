@@ -25,16 +25,9 @@
             height: 7px;
             border-radius: 50%;
             cursor: grab;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 6px;
-            color: white;
+            background-color: green;
             border: 0.5px solid black;
         }
-        .verde { background-color: green; }
-        .laranja { background-color: orange; }
-        .vermelho { background-color: red; }
         .popup {
             display: none;
             position: absolute;
@@ -64,9 +57,9 @@
 
     <div id="popup" class="popup">
         <label for="quadra">Quadra:</label>
-        <select id="quadra"></select>
+        <input type="text" id="quadra">
         <label for="lote">Lote:</label>
-        <select id="lote"></select>
+        <input type="text" id="lote">
         <button onclick="salvarCoordenadas()">Salvar</button>
     </div>
 
@@ -75,66 +68,10 @@
         let mapaContainer = document.getElementById("mapa-container");
         let bolinhas = [];
         let bolinhaSelecionada = null;
-        let quadrasLotes = {}; // Objeto para armazenar os lotes de cada quadra
-
-        async function carregarQuadrasELotes() {
-            try {
-                const response = await fetch(API_URL);
-                const data = await response.json();
-
-                let quadraSelect = document.getElementById("quadra");
-                let loteSelect = document.getElementById("lote");
-
-                quadraSelect.innerHTML = "";
-                loteSelect.innerHTML = "";
-
-                quadrasLotes = {}; // Resetar os dados
-
-                data.forEach(lote => {
-                    let quadra = lote[0];
-                    let loteNum = lote[1];
-
-                    if (quadra && loteNum) {
-                        if (!quadrasLotes[quadra]) quadrasLotes[quadra] = [];
-                        quadrasLotes[quadra].push(loteNum);
-                    }
-                });
-
-                Object.keys(quadrasLotes).forEach(quadra => {
-                    let option = document.createElement("option");
-                    option.value = quadra;
-                    option.textContent = quadra;
-                    quadraSelect.appendChild(option);
-                });
-
-                quadraSelect.addEventListener("change", atualizarLotes);
-                atualizarLotes();
-            } catch (error) {
-                console.error("Erro ao carregar quadras e lotes:", error);
-                alert("Erro ao carregar os dados da planilha.");
-            }
-        }
-
-        function atualizarLotes() {
-            let quadraSelect = document.getElementById("quadra");
-            let loteSelect = document.getElementById("lote");
-
-            loteSelect.innerHTML = "";
-
-            let quadraSelecionada = quadraSelect.value;
-            if (quadrasLotes[quadraSelecionada]) {
-                quadrasLotes[quadraSelecionada].forEach(lote => {
-                    let option = document.createElement("option");
-                    option.value = lote;
-                    option.textContent = lote;
-                    loteSelect.appendChild(option);
-                });
-            }
-        }
 
         function criarBolinha() {
             let bolinha = document.createElement("div");
-            bolinha.classList.add("bolinha", "verde");
+            bolinha.classList.add("bolinha");
             bolinha.style.left = "50%";
             bolinha.style.top = "50%";
             bolinha.style.position = "absolute";
@@ -179,7 +116,7 @@
             let quadra = document.getElementById("quadra").value;
             let lote = document.getElementById("lote").value;
             if (!quadra || !lote) {
-                alert("Selecione Quadra e Lote!");
+                alert("Digite a Quadra e o Lote!");
                 return;
             }
 
@@ -202,8 +139,6 @@
                 bolinhaRemovida.remove();
             }
         }
-
-        carregarQuadrasELotes();
     </script>
 
 </body>
