@@ -24,82 +24,81 @@
             width: 10px;
             height: 10px;
             border-radius: 50%;
+            border: 1px solid black;
             cursor: pointer;
         }
         .verde { background-color: green; }
         .laranja { background-color: orange; }
         .vermelho { background-color: red; }
+        #config-form {
+            margin-top: 20px;
+        }
     </style>
 </head>
 <body>
 
     <h1>Configuração do Mapa</h1>
 
+    <button onclick="criarBolinha()">Gerar Bolinha</button>
+
     <div id="mapa-container">
         <img id="mapa" src="implantacao.png" alt="Mapa de Implantação">
     </div>
 
-    <button onclick="adicionarBolinha()">Adicionar Bolinha</button>
+    <div id="config-form">
+        <label for="quadra">Quadra:</label>
+        <select id="quadra"></select>
+
+        <label for="lote">Lote:</label>
+        <select id="lote"></select>
+
+        <button onclick="salvarCoordenadas()">Salvar</button>
+        <button onclick="excluirBolinha()">Excluir Bolinha</button>
+    </div>
 
     <script>
+        let bolinhaAtual = null;
         const API_URL = "https://script.google.com/macros/s/AKfycbzL2zXBQFJq1oTUbP2jZeOvpKqJnD4NI1b_dx8vhTTD_Omp9TolsP9-CyH8db-btd7mow/exec";
 
-        function adicionarBolinha() {
+        function criarBolinha() {
             let mapa = document.getElementById("mapa-container");
-
             let bolinha = document.createElement("div");
             bolinha.classList.add("bolinha", "verde");
             bolinha.style.left = "50%";
             bolinha.style.top = "50%";
+            bolinha.draggable = true;
+
+            bolinha.addEventListener("dragstart", (event) => {
+                event.dataTransfer.setData("text/plain", null);
+                bolinhaAtual = bolinha;
+            });
+
             mapa.appendChild(bolinha);
-
-            bolinha.addEventListener("click", () => selecionarQuadraLote(bolinha));
-            moverBolinha(bolinha);
         }
 
-        function moverBolinha(bolinha) {
-            bolinha.onmousedown = function (event) {
-                event.preventDefault();
+        document.getElementById("mapa-container").addEventListener("dragover", (event) => {
+            event.preventDefault();
+        });
 
-                let shiftX = event.clientX - bolinha.getBoundingClientRect().left;
-                let shiftY = event.clientY - bolinha.getBoundingClientRect().top;
-
-                function moveAt(pageX, pageY) {
-                    let mapa = document.getElementById("mapa-container");
-                    let bounds = mapa.getBoundingClientRect();
-
-                    let xPercent = ((pageX - bounds.left - shiftX) / bounds.width) * 100;
-                    let yPercent = ((pageY - bounds.top - shiftY) / bounds.height) * 100;
-
-                    bolinha.style.left = `${xPercent}%`;
-                    bolinha.style.top = `${yPercent}%`;
-                }
-
-                function onMouseMove(event) {
-                    moveAt(event.pageX, event.pageY);
-                }
-
-                document.addEventListener("mousemove", onMouseMove);
-
-                bolinha.onmouseup = function () {
-                    document.removeEventListener("mousemove", onMouseMove);
-                    selecionarQuadraLote(bolinha);
-                };
-            };
-        }
-
-        function selecionarQuadraLote(bolinha) {
-            let quadra = prompt("Digite a Quadra:");
-            let lote = prompt("Digite o Lote:");
-
-            if (quadra && lote) {
-                salvarCoordenadas(quadra, lote, bolinha);
+        document.getElementById("mapa-container").addEventListener("drop", (event) => {
+            event.preventDefault();
+            if (bolinhaAtual) {
+                let rect = event.target.getBoundingClientRect();
+                bolinhaAtual.style.left = `${event.clientX - rect.left}px`;
+                bolinhaAtual.style.top = `${event.clientY - rect.top}px`;
             }
-        }
+        });
 
-        function salvarCoordenadas(quadra, lote, bolinha) {
-            let x = bolinha.style.left.replace("%", "");
-            let y = bolinha.style.top.replace("%", "");
+        function salvarCoordenadas() {
+            if (!bolinhaAtual) {
+                alert("Nenhuma bolinha selecionada!");
+                return;
+            }
+
+            let quadra = document.getElementById("quadra").value;
+            let lote = document.getElementById("lote").value;
+            let x = parseInt(bolinhaAtual.style.left);
+            let y = parseInt(bolinhaAtual.style.top);
 
             fetch(API_URL, {
                 method: "POST",
@@ -107,11 +106,23 @@
                 headers: { "Content-Type": "application/json" }
             })
             .then(response => response.json())
-            .then(data => console.log("Salvo!", data))
-            .catch(error => console.error("Erro:", error));
+            .then(data => {
+                console.log("✅ Salvo com sucesso:", data);
+                alert("Coordenadas salvas!");
+            })
+            .catch(error => {
+                console.error("❌ Erro ao salvar:", error);
+                alert("Erro ao salvar!");
+            });
+        }
+
+        function excluirBolinha() {
+            if (bolinhaAtual) {
+                bolinhaAtual.remove();
+                bolinhaAtual = null;
+            }
         }
     </script>
 
 </body>
 </html>
-
