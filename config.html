@@ -24,7 +24,7 @@
             width: 7px;
             height: 7px;
             border-radius: 50%;
-            border: 1px solid gray; /* Borda fina para visibilidade */
+            border: 1px solid gray;
             cursor: grab;
         }
         .verde { background-color: green; }
@@ -48,6 +48,7 @@
     <h1>Configuração do Mapa</h1>
 
     <button onclick="gerarBolinha()">Gerar Bolinha</button>
+    <button onclick="excluirBolinha()">Excluir Bolinha</button>
 
     <div id="mapa-container">
         <img id="mapa" src="implantacao.png" alt="Mapa de Implantação">
@@ -65,35 +66,42 @@
     <script>
         const API_URL = "https://script.google.com/macros/s/AKfycbzL2zXBQFJq1oTUbP2jZeOvpKqJnD4NI1b_dx8vhTTD_Omp9TolsP9-CyH8db-btd7mow/exec";
         let bolinhaSelecionada = null;
+        let isDragging = false;
 
         function gerarBolinha() {
             let bolinha = document.createElement("div");
             bolinha.classList.add("bolinha");
             bolinha.style.left = "50%";
             bolinha.style.top = "50%";
-            bolinha.draggable = true;
 
             bolinha.addEventListener("mousedown", function(event) {
                 bolinhaSelecionada = bolinha;
-                document.addEventListener("mousemove", moverBolinha);
-            });
+                isDragging = true;
 
-            bolinha.addEventListener("mouseup", function() {
-                document.removeEventListener("mousemove", moverBolinha);
-                document.getElementById("config-popup").style.display = "block";
+                document.addEventListener("mousemove", moverBolinha);
+                document.addEventListener("mouseup", soltarBolinha);
             });
 
             document.getElementById("mapa-container").appendChild(bolinha);
         }
 
         function moverBolinha(event) {
-            if (bolinhaSelecionada) {
+            if (isDragging && bolinhaSelecionada) {
                 let rect = document.getElementById("mapa").getBoundingClientRect();
                 let x = event.clientX - rect.left;
                 let y = event.clientY - rect.top;
 
                 bolinhaSelecionada.style.left = `${x}px`;
                 bolinhaSelecionada.style.top = `${y}px`;
+            }
+        }
+
+        function soltarBolinha() {
+            if (isDragging) {
+                isDragging = false;
+                document.removeEventListener("mousemove", moverBolinha);
+                document.removeEventListener("mouseup", soltarBolinha);
+                document.getElementById("config-popup").style.display = "block";
             }
         }
 
@@ -122,6 +130,15 @@
             });
 
             bolinhaSelecionada = null;
+        }
+
+        function excluirBolinha() {
+            if (bolinhaSelecionada) {
+                bolinhaSelecionada.remove();
+                bolinhaSelecionada = null;
+            } else {
+                alert("Clique em uma bolinha para excluí-la.");
+            }
         }
 
     </script>
