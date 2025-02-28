@@ -1,29 +1,25 @@
-<!DOCTYPE html>
-<html lang="pt">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mapa de Disponibilidade</title>
-    <style>
-        .bolinha {
-            position: absolute;
-            width: 7px; /* 70% menor */
-            height: 7px; /* 70% menor */
-            border-radius: 50%;
-        }
-        .verde { background-color: green; }
-        .vermelho { background-color: red; }
-        .laranja { background-color: orange; }
-    </style>
-</head>
-<body onload="carregarMapa()">
-    <h1>Mapa de Disponibilidade</h1>
-    <div id="mapa-container" style="position: relative;">
-        <img src="implantacao.png" width="800" id="mapa">
-    </div>
-    <script src="script.js"></script>
-</body>
-</html>
+<script>
+    async function carregarMapa() {
+        const response = await fetch(API_URL);
+        const data = await response.json();
+
+        data.forEach(lote => {
+            let bolinha = document.createElement("div");
+            bolinha.classList.add("bolinha");
+            bolinha.style.left = lote.x + "px";
+            bolinha.style.top = lote.y + "px";
+
+            let cor = "verde";
+            if (lote.status === "Vendido") cor = "vermelho";
+            else if (lote.status === "Reservado") cor = "laranja";
+
+            bolinha.classList.add(cor);
+            document.getElementById("mapa-container").appendChild(bolinha);
+        });
+    }
+
+    carregarMapa();
+</script>
 
 
         carregarLotes();
