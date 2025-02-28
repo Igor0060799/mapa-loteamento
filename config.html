@@ -61,20 +61,30 @@
         // Carrega as quadras e lotes da planilha do Google Sheets
         async function carregarQuadrasELotes() {
             try {
+                console.log("🔄 Buscando dados da API...");
                 const response = await fetch(API_URL);
                 const data = await response.json();
+                console.log("✅ Dados recebidos:", data);
 
                 let quadras = new Set();
                 let lotes = {};
 
                 data.forEach(lote => {
-                    quadras.add(lote.quadra);
-                    if (!lotes[lote.quadra]) lotes[lote.quadra] = [];
-                    lotes[lote.quadra].push(lote.lote);
+                    let quadra = lote[0];  // Coluna A: Quadra
+                    let loteNum = lote[1];  // Coluna B: Lote
+
+                    if (quadra && loteNum) {
+                        quadras.add(quadra);
+                        if (!lotes[quadra]) lotes[quadra] = [];
+                        lotes[quadra].push(loteNum);
+                    }
                 });
 
                 let quadraSelect = document.getElementById("quadra");
                 let loteSelect = document.getElementById("lote");
+
+                quadraSelect.innerHTML = "";
+                loteSelect.innerHTML = "";
 
                 quadras.forEach(quadra => {
                     let option = document.createElement("option");
@@ -86,17 +96,20 @@
                 quadraSelect.addEventListener("change", function() {
                     loteSelect.innerHTML = "";
                     let quadraSelecionada = quadraSelect.value;
-                    lotes[quadraSelecionada].forEach(lote => {
-                        let option = document.createElement("option");
-                        option.value = lote;
-                        option.textContent = lote;
-                        loteSelect.appendChild(option);
-                    });
+                    if (lotes[quadraSelecionada]) {
+                        lotes[quadraSelecionada].forEach(lote => {
+                            let option = document.createElement("option");
+                            option.value = lote;
+                            option.textContent = lote;
+                            loteSelect.appendChild(option);
+                        });
+                    }
                 });
 
                 quadraSelect.dispatchEvent(new Event("change"));
             } catch (error) {
-                console.error("Erro ao carregar dados:", error);
+                console.error("❌ Erro ao carregar dados:", error);
+                alert("Erro ao carregar os dados da planilha. Verifique a API.");
             }
         }
 
@@ -117,7 +130,7 @@
                 y: Math.random() * 600   // Exemplo de posição (será ajustado manualmente)
             };
 
-            console.log("Coordenadas salvas:", coordenadas);
+            console.log("✅ Coordenadas salvas:", coordenadas);
             alert("Coordenadas salvas! Ajuste manualmente no mapa.");
         }
 
