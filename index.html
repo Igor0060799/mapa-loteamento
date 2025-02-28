@@ -1,28 +1,68 @@
-<script>
-    async function carregarMapa() {
-        const response = await fetch(API_URL);
-        const data = await response.json();
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mapa de Implantação</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+        }
+        #mapa-container {
+            position: relative;
+            display: inline-block;
+            margin-top: 20px;
+        }
+        #mapa {
+            width: 100%;
+            max-width: 800px;
+            border: 2px solid #ccc;
+        }
+        .bolinha {
+            position: absolute;
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            border: 1px solid gray; /* Bordas finas para visibilidade */
+        }
+        .verde { background-color: green; }
+        .laranja { background-color: orange; }
+        .vermelho { background-color: red; }
+    </style>
+</head>
+<body>
 
-        data.forEach(lote => {
-            let bolinha = document.createElement("div");
-            bolinha.classList.add("bolinha");
-            bolinha.style.left = lote.x + "px";
-            bolinha.style.top = lote.y + "px";
+    <h1>Mapa de Implantação</h1>
 
-            let cor = "verde";
-            if (lote.status === "Vendido") cor = "vermelho";
-            else if (lote.status === "Reservado") cor = "laranja";
+    <div id="mapa-container">
+        <img id="mapa" src="implantacao.png" alt="Mapa de Implantação">
+    </div>
 
-            bolinha.classList.add(cor);
-            document.getElementById("mapa-container").appendChild(bolinha);
-        });
-    }
+    <script>
+        const API_URL = "https://script.google.com/macros/s/AKfycbzL2zXBQFJq1oTUbP2jZeOvpKqJnD4NI1b_dx8vhTTD_Omp9TolsP9-CyH8db-btd7mow/exec";
 
-    carregarMapa();
-</script>
+        async function carregarMapa() {
+            const response = await fetch(API_URL);
+            const data = await response.json();
 
+            data.forEach(lote => {
+                let bolinha = document.createElement("div");
+                bolinha.classList.add("bolinha");
+                bolinha.style.left = lote.x + "px";
+                bolinha.style.top = lote.y + "px";
 
-        carregarLotes();
+                let cor = "verde";
+                if (lote.status === "Vendido") cor = "vermelho";
+                else if (lote.status === "Reservado") cor = "laranja";
+
+                bolinha.classList.add(cor);
+                document.getElementById("mapa-container").appendChild(bolinha);
+            });
+        }
+
+        carregarMapa();
     </script>
+
 </body>
 </html>
