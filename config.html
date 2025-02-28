@@ -118,7 +118,7 @@
 
                     quadras.add(quadra);
                     if (!lotesPorQuadra[quadra]) lotesPorQuadra[quadra] = [];
-                    lotesPorQuadra[quadra].push(loteNum);
+                    lotesPorQuadra[quadra].push({ loteNum, status });
                 });
 
                 let quadraSelect = document.getElementById("quadra");
@@ -139,10 +139,10 @@
                     loteSelect.innerHTML = "";
 
                     if (lotesPorQuadra[quadraSelecionada]) {
-                        lotesPorQuadra[quadraSelecionada].forEach(lote => {
+                        lotesPorQuadra[quadraSelecionada].forEach(({ loteNum }) => {
                             let option = document.createElement("option");
-                            option.value = lote;
-                            option.textContent = lote;
+                            option.value = loteNum;
+                            option.textContent = loteNum;
                             loteSelect.appendChild(option);
                         });
                     }
@@ -200,8 +200,11 @@
                 return;
             }
 
+            let status = lotesData.find(item => item[0] === quadra && item[1] === lote)?.[2];
+
             bolinhaSelecionada.dataset.quadra = quadra;
             bolinhaSelecionada.dataset.lote = lote;
+            bolinhaSelecionada.classList.add(status);
 
             document.getElementById("config-popup").style.display = "none";
 
