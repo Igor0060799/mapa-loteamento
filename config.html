@@ -2,18 +2,128 @@
 <html lang="pt">
 <head>
     <meta charset="UTF-8">
-    <title>Configuração</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configurar Mapa</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+        }
+        #mapa-container {
+            position: relative;
+            display: inline-block;
+            margin-top: 20px;
+        }
+        #mapa {
+            width: 100%;
+            max-width: 800px;
+            border: 2px solid #ccc;
+        }
+        .bolinha {
+            position: absolute;
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            border: 2px solid #000;
+            cursor: pointer;
+        }
+        .verde { background-color: green; }
+        .laranja { background-color: orange; }
+        .vermelho { background-color: red; }
+        #config-form {
+            margin-top: 20px;
+        }
+    </style>
 </head>
-<body onload="carregarDados()">
-    <h1>Configuração</h1>
-    <label>Quadra:</label>
-    <select id="quadra" onchange="preencherLotes()"></select>
-    
-    <label>Lote:</label>
-    <select id="lote"></select>
+<body>
 
-    <button onclick="salvarBolinhas()">Salvar Aplicação</button>
+    <h1>Configuração do Mapa</h1>
 
-    <script src="script.js"></script>
+    <div id="mapa-container">
+        <!-- Carregamento do mapa -->
+        <img id="mapa" src="implantacao.png" alt="Mapa de Implantação">
+    </div>
+
+    <div id="config-form">
+        <label for="quadra">Quadra:</label>
+        <select id="quadra"></select>
+
+        <label for="lote">Lote:</label>
+        <select id="lote"></select>
+
+        <button onclick="salvarCoordenadas()">Salvar</button>
+    </div>
+
+    <script>
+        // URL da API do Google Apps Script
+        const API_URL = "https://script.google.com/macros/s/AKfycbxhCWojJ7ZhganTySNmTLzbVsUdMU_D8Gn6oJY6_aaMJihZw1BOhnx5DM2QfTQYlrpT/exec";
+
+        // Carrega as quadras e lotes da planilha do Google Sheets
+        async function carregarQuadrasELotes() {
+            try {
+                const response = await fetch(API_URL);
+                const data = await response.json();
+
+                let quadras = new Set();
+                let lotes = {};
+
+                data.forEach(lote => {
+                    quadras.add(lote.quadra);
+                    if (!lotes[lote.quadra]) lotes[lote.quadra] = [];
+                    lotes[lote.quadra].push(lote.lote);
+                });
+
+                let quadraSelect = document.getElementById("quadra");
+                let loteSelect = document.getElementById("lote");
+
+                quadras.forEach(quadra => {
+                    let option = document.createElement("option");
+                    option.value = quadra;
+                    option.textContent = quadra;
+                    quadraSelect.appendChild(option);
+                });
+
+                quadraSelect.addEventListener("change", function() {
+                    loteSelect.innerHTML = "";
+                    let quadraSelecionada = quadraSelect.value;
+                    lotes[quadraSelecionada].forEach(lote => {
+                        let option = document.createElement("option");
+                        option.value = lote;
+                        option.textContent = lote;
+                        loteSelect.appendChild(option);
+                    });
+                });
+
+                quadraSelect.dispatchEvent(new Event("change"));
+            } catch (error) {
+                console.error("Erro ao carregar dados:", error);
+            }
+        }
+
+        // Salvar coordenadas no banco de dados
+        function salvarCoordenadas() {
+            let quadra = document.getElementById("quadra").value;
+            let lote = document.getElementById("lote").value;
+
+            if (!quadra || !lote) {
+                alert("Selecione a Quadra e o Lote!");
+                return;
+            }
+
+            let coordenadas = {
+                quadra: quadra,
+                lote: lote,
+                x: Math.random() * 800,  // Exemplo de posição (será ajustado manualmente)
+                y: Math.random() * 600   // Exemplo de posição (será ajustado manualmente)
+            };
+
+            console.log("Coordenadas salvas:", coordenadas);
+            alert("Coordenadas salvas! Ajuste manualmente no mapa.");
+        }
+
+        // Chamar função ao carregar a página
+        carregarQuadrasELotes();
+    </script>
+
 </body>
 </html>
