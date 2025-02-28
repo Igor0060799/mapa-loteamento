@@ -21,9 +21,10 @@
         }
         .bolinha {
             position: absolute;
-            width: 5px;
-            height: 5px;
+            width: 7px;
+            height: 7px;
             border-radius: 50%;
+            border: 1px solid gray; /* Borda fina para visibilidade */
             cursor: grab;
         }
         .verde { background-color: green; }
@@ -40,19 +41,6 @@
             border: 1px solid #ccc;
             box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.2);
         }
-        table {
-            width: 80%;
-            margin: 20px auto;
-            border-collapse: collapse;
-        }
-        th, td {
-            border: 1px solid #ccc;
-            padding: 5px;
-            text-align: center;
-        }
-        th {
-            background-color: #f4f4f4;
-        }
     </style>
 </head>
 <body>
@@ -60,7 +48,6 @@
     <h1>Configuração do Mapa</h1>
 
     <button onclick="gerarBolinha()">Gerar Bolinha</button>
-    <button onclick="excluirBolinha()">Excluir Bolinha Selecionada</button>
 
     <div id="mapa-container">
         <img id="mapa" src="implantacao.png" alt="Mapa de Implantação">
@@ -75,67 +62,39 @@
         <button onclick="confirmarBolinha()">Confirmar</button>
     </div>
 
-    <table>
-        <thead>
-            <tr>
-                <th>Quadra</th>
-                <th>Lote</th>
-                <th>Status</th>
-                <th>Ação</th>
-            </tr>
-        </thead>
-        <tbody id="tabela-bolinhas"></tbody>
-    </table>
-
     <script>
         const API_URL = "https://script.google.com/macros/s/AKfycbzL2zXBQFJq1oTUbP2jZeOvpKqJnD4NI1b_dx8vhTTD_Omp9TolsP9-CyH8db-btd7mow/exec";
         let bolinhaSelecionada = null;
-
-        async function carregarQuadrasELotes() {
-            const response = await fetch(API_URL);
-            const data = await response.json();
-
-            let quadras = new Set();
-            let lotes = {};
-            let tabela = document.getElementById("tabela-bolinhas");
-            tabela.innerHTML = "";
-
-            data.forEach(lote => {
-                let quadra = lote.quadra;
-                let loteNum = lote.lote;
-                let status = lote.status;
-
-                if (quadra && loteNum) {
-                    quadras.add(quadra);
-                    if (!lotes[quadra]) lotes[quadra] = [];
-                    lotes[quadra].push({ lote: loteNum, status });
-
-                    let row = `<tr onclick="selecionarBolinha('${quadra}', '${loteNum}')">
-                        <td>${quadra}</td>
-                        <td>${loteNum}</td>
-                        <td>${status}</td>
-                        <td><button onclick="excluirBolinha('${quadra}', '${loteNum}')">Excluir</button></td>
-                    </tr>`;
-                    tabela.innerHTML += row;
-                }
-            });
-        }
 
         function gerarBolinha() {
             let bolinha = document.createElement("div");
             bolinha.classList.add("bolinha");
             bolinha.style.left = "50%";
             bolinha.style.top = "50%";
-            bolinha.setAttribute("draggable", "true");
+            bolinha.draggable = true;
 
-            bolinha.addEventListener("dragend", function(event) {
-                bolinha.style.left = event.clientX + "px";
-                bolinha.style.top = event.clientY + "px";
-                document.getElementById("config-popup").style.display = "block";
+            bolinha.addEventListener("mousedown", function(event) {
                 bolinhaSelecionada = bolinha;
+                document.addEventListener("mousemove", moverBolinha);
+            });
+
+            bolinha.addEventListener("mouseup", function() {
+                document.removeEventListener("mousemove", moverBolinha);
+                document.getElementById("config-popup").style.display = "block";
             });
 
             document.getElementById("mapa-container").appendChild(bolinha);
+        }
+
+        function moverBolinha(event) {
+            if (bolinhaSelecionada) {
+                let rect = document.getElementById("mapa").getBoundingClientRect();
+                let x = event.clientX - rect.left;
+                let y = event.clientY - rect.top;
+
+                bolinhaSelecionada.style.left = `${x}px`;
+                bolinhaSelecionada.style.top = `${y}px`;
+            }
         }
 
         function confirmarBolinha() {
@@ -147,32 +106,24 @@
                 return;
             }
 
-            let cor = "verde";
-            if (lote.status === "Vendido") cor = "vermelho";
-            else if (lote.status === "Reservado") cor = "laranja";
-
-            bolinhaSelecionada.classList.add(cor);
-            bolinhaSelecionada.setAttribute("data-quadra", quadra);
-            bolinhaSelecionada.setAttribute("data-lote", lote);
+            bolinhaSelecionada.dataset.quadra = quadra;
+            bolinhaSelecionada.dataset.lote = lote;
 
             document.getElementById("config-popup").style.display = "none";
 
             fetch(API_URL, {
                 method: "POST",
-                body: JSON.stringify({ quadra, lote, x: bolinhaSelecionada.style.left, y: bolinhaSelecionada.style.top })
+                body: JSON.stringify({ 
+                    quadra, 
+                    lote, 
+                    x: parseInt(bolinhaSelecionada.style.left), 
+                    y: parseInt(bolinhaSelecionada.style.top) 
+                })
             });
 
-            carregarQuadrasELotes();
+            bolinhaSelecionada = null;
         }
 
-        function excluirBolinha() {
-            if (bolinhaSelecionada) {
-                bolinhaSelecionada.remove();
-                bolinhaSelecionada = null;
-            }
-        }
-
-        carregarQuadrasELotes();
     </script>
 
 </body>
