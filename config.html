@@ -21,10 +21,9 @@
         }
         .bolinha {
             position: absolute;
-            width: 10px;
-            height: 10px;
+            width: 5px;
+            height: 5px;
             border-radius: 50%;
-            border: 2px solid #000;
             cursor: grab;
         }
         .verde { background-color: green; }
@@ -67,7 +66,6 @@
         <img id="mapa" src="implantacao.png" alt="Mapa de Implantação">
     </div>
 
-    <!-- Pop-up para selecionar Quadra e Lote -->
     <div id="config-popup">
         <h3>Selecionar Quadra e Lote</h3>
         <label for="quadra">Quadra:</label>
@@ -77,7 +75,6 @@
         <button onclick="confirmarBolinha()">Confirmar</button>
     </div>
 
-    <!-- Tabela para visualizar bolinhas salvas -->
     <table>
         <thead>
             <tr>
@@ -95,65 +92,33 @@
         let bolinhaSelecionada = null;
 
         async function carregarQuadrasELotes() {
-            try {
-                const response = await fetch(API_URL);
-                const data = await response.json();
+            const response = await fetch(API_URL);
+            const data = await response.json();
 
-                let quadras = new Set();
-                let lotes = {};
-                let tabela = document.getElementById("tabela-bolinhas");
-                tabela.innerHTML = "";
+            let quadras = new Set();
+            let lotes = {};
+            let tabela = document.getElementById("tabela-bolinhas");
+            tabela.innerHTML = "";
 
-                data.forEach(lote => {
-                    let quadra = lote.quadra;
-                    let loteNum = lote.lote;
-                    let status = lote.status;
+            data.forEach(lote => {
+                let quadra = lote.quadra;
+                let loteNum = lote.lote;
+                let status = lote.status;
 
-                    if (quadra && loteNum) {
-                        quadras.add(quadra);
-                        if (!lotes[quadra]) lotes[quadra] = [];
-                        lotes[quadra].push({ lote: loteNum, status });
+                if (quadra && loteNum) {
+                    quadras.add(quadra);
+                    if (!lotes[quadra]) lotes[quadra] = [];
+                    lotes[quadra].push({ lote: loteNum, status });
 
-                        let row = `<tr onclick="selecionarBolinha('${quadra}', '${loteNum}')">
-                            <td>${quadra}</td>
-                            <td>${loteNum}</td>
-                            <td>${status}</td>
-                            <td><button onclick="excluirBolinha('${quadra}', '${loteNum}')">Excluir</button></td>
-                        </tr>`;
-                        tabela.innerHTML += row;
-                    }
-                });
-
-                let quadraSelect = document.getElementById("quadra");
-                let loteSelect = document.getElementById("lote");
-
-                quadraSelect.innerHTML = "<option value=''>Selecione</option>";
-                loteSelect.innerHTML = "<option value=''>Selecione</option>";
-
-                quadras.forEach(quadra => {
-                    let option = document.createElement("option");
-                    option.value = quadra;
-                    option.textContent = quadra;
-                    quadraSelect.appendChild(option);
-                });
-
-                quadraSelect.addEventListener("change", function() {
-                    loteSelect.innerHTML = "<option value=''>Selecione</option>";
-                    let quadraSelecionada = quadraSelect.value;
-                    if (lotes[quadraSelecionada]) {
-                        lotes[quadraSelecionada].forEach(lote => {
-                            let option = document.createElement("option");
-                            option.value = lote.lote;
-                            option.textContent = lote.lote;
-                            loteSelect.appendChild(option);
-                        });
-                    }
-                });
-
-                quadraSelect.dispatchEvent(new Event("change"));
-            } catch (error) {
-                console.error("Erro ao carregar dados:", error);
-            }
+                    let row = `<tr onclick="selecionarBolinha('${quadra}', '${loteNum}')">
+                        <td>${quadra}</td>
+                        <td>${loteNum}</td>
+                        <td>${status}</td>
+                        <td><button onclick="excluirBolinha('${quadra}', '${loteNum}')">Excluir</button></td>
+                    </tr>`;
+                    tabela.innerHTML += row;
+                }
+            });
         }
 
         function gerarBolinha() {
