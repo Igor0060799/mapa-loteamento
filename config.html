@@ -1,54 +1,107 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Configuração do Mapa</title>
+    <title>Mapa de Loteamento</title>
+    <script>
+        let quadras = [];
+        let lotes = {};
+        
+        async function carregarDados() {
+            const response = await fetch("https://script.google.com/macros/s/YOUR_GOOGLE_SCRIPT_ID/exec");
+            const data = await response.json();
+            
+            quadras = [...new Set(data.map(item => item.quadra))];
+            
+            quadras.forEach(quadra => {
+                lotes[quadra] = data.filter(item => item.quadra === quadra).map(item => item.lote);
+            });
+        }
+
+        function abrirPopup(event) {
+            const x = event.offsetX;
+            const y = event.offsetY;
+            document.getElementById("popup").style.display = "block";
+            document.getElementById("posX").value = x;
+            document.getElementById("posY").value = y;
+            preencherQuadras();
+        }
+
+        function preencherQuadras() {
+            let selectQuadra = document.getElementById("quadra");
+            selectQuadra.innerHTML = "";
+            quadras.forEach(q => {
+                let option = document.createElement("option");
+                option.value = q;
+                option.textContent = q;
+                selectQuadra.appendChild(option);
+            });
+            preencherLotes();
+        }
+
+        function preencherLotes() {
+            let quadraSelecionada = document.getElementById("quadra").value;
+            let selectLote = document.getElementById("lote");
+            selectLote.innerHTML = "";
+            lotes[quadraSelecionada].forEach(l => {
+                let option = document.createElement("option");
+                option.value = l;
+                option.textContent = l;
+                selectLote.appendChild(option);
+            });
+        }
+
+        function aplicarBola() {
+            let x = document.getElementById("posX").value;
+            let y = document.getElementById("posY").value;
+            let quadra = document.getElementById("quadra").value;
+            let lote = document.getElementById("lote").value;
+            
+            let bolinha = document.createElement("div");
+            bolinha.classList.add("bolinha");
+            bolinha.style.left = `${x}px`;
+            bolinha.style.top = `${y}px`;
+            document.getElementById("mapa-container").appendChild(bolinha);
+            
+            document.getElementById("popup").style.display = "none";
+        }
+    </script>
     <style>
-        body { text-align: center; font-family: Arial, sans-serif; }
-        #mapa { position: relative; width: 100%; max-width: 800px; margin: auto; cursor: crosshair; }
+        #mapa-container {
+            position: relative;
+            display: inline-block;
+        }
         .bolinha {
-            position: absolute;
             width: 20px;
             height: 20px;
+            background-color: red;
             border-radius: 50%;
-            border: 2px solid black;
-            background: yellow;
-            cursor: pointer;
+            position: absolute;
+            transform: translate(-50%, -50%);
+        }
+        #popup {
+            display: none;
+            position: absolute;
+            background: white;
+            padding: 10px;
+            border: 1px solid black;
         }
     </style>
 </head>
-<body>
-    <h1>Configuração do Mapa</h1>
-    <p>Clique no mapa para adicionar uma bolinha e escolha o lote correspondente.</p>
-    <div id="mapa">
+<body onload="carregarDados()">
+    <div id="mapa-container" onclick="abrirPopup(event)">
         <img src="implantacao.png" style="width: 100%;">
     </div>
-
-    <script>
-        document.getElementById("mapa").addEventListener("click", async function(event) {
-            let x = event.offsetX;
-            let y = event.offsetY;
-
-            let quadra = prompt("Informe a Quadra:");
-            let lote = prompt("Informe o Lote:");
-
-            if (quadra && lote) {
-                let response = await fetch("https://script.google.com/macros/s/AKfycbzAf87ZInbsjmvgCyxXVCFwcWSiMGdNIvdOLPL5DT2tj_2aeVlEFWAyLyc8oE2BvTO-/exec", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ quadra, lote, x, y })
-                });
-
-                let result = await response.json();
-                if (result.status === "sucesso") {
-                    alert("Coordenadas salvas!");
-                    location.reload();
-                } else {
-                    alert("Erro ao salvar.");
-                }
-            }
-        });
-    </script>
+    
+    <div id="popup">
+        <label>Quadra:</label>
+        <select id="quadra" onchange="preencherLotes()"></select>
+        <label>Lote:</label>
+        <select id="lote"></select>
+        <input type="hidden" id="posX">
+        <input type="hidden" id="posY">
+        <button onclick="aplicarBola()">Aplicar</button>
+    </div>
 </body>
 </html>
