@@ -25,6 +25,7 @@
             height: 10px;
             border-radius: 50%;
             cursor: pointer;
+            transform: translate(-50%, -50%);
         }
         .verde { background-color: green; }
         .laranja { background-color: orange; }
@@ -44,20 +45,14 @@
 
         async function carregarBolinhas() {
             try {
-                console.log("🔄 Buscando dados da API...");
                 const response = await fetch(API_URL);
                 const data = await response.json();
-                console.log("✅ Dados recebidos:", data);
-
                 let mapa = document.getElementById("mapa-container");
 
                 data.forEach(lote => {
                     let { quadra, loteNum, status, x, y } = lote;
 
-                    if (!x || !y) {
-                        console.warn(`❗ Coordenadas inválidas para ${quadra}-${loteNum}`);
-                        return;
-                    }
+                    if (!x || !y) return;
 
                     let bolinha = document.createElement("div");
                     bolinha.classList.add("bolinha");
@@ -74,7 +69,7 @@
 
             } catch (error) {
                 console.error("❌ Erro ao carregar dados:", error);
-                alert("Erro ao carregar os dados do mapa. Verifique a API.");
+                alert("Erro ao carregar os dados do mapa.");
             }
         }
 
@@ -83,4 +78,5 @@
 
 </body>
 </html>
+
 
