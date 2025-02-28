@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<<!DOCTYPE html>
 <html lang="pt">
 <head>
     <meta charset="UTF-8">
@@ -24,12 +24,13 @@
             width: 10px;
             height: 10px;
             border-radius: 50%;
-            cursor: pointer;
+            cursor: grab;
             display: flex;
             justify-content: center;
             align-items: center;
             font-size: 10px;
             color: white;
+            border: 0.5px solid black;
         }
         .verde { background-color: green; }
         .laranja { background-color: orange; }
@@ -40,6 +41,7 @@
             background: white;
             border: 1px solid #ccc;
             padding: 10px;
+            z-index: 1000;
         }
         .botao {
             margin: 10px;
@@ -72,6 +74,7 @@
         const API_URL = "https://script.google.com/macros/s/AKfycbzL2zXBQFJq1oTUbP2jZeOvpKqJnD4NI1b_dx8vhTTD_Omp9TolsP9-CyH8db-btd7mow/exec";
         let mapaContainer = document.getElementById("mapa-container");
         let bolinhas = [];
+        let bolinhaSelecionada = null;
 
         async function carregarQuadrasELotes() {
             const response = await fetch(API_URL);
@@ -124,23 +127,63 @@
             bolinha.classList.add("bolinha", "verde");
             bolinha.style.left = "50%";
             bolinha.style.top = "50%";
-            bolinha.draggable = true;
+            bolinha.style.position = "absolute";
+            bolinha.draggable = false;
+            bolinha.addEventListener("mousedown", iniciarArrasto);
             mapaContainer.appendChild(bolinha);
-            bolinha.addEventListener("click", abrirPopUp);
             bolinhas.push(bolinha);
         }
 
-        function abrirPopUp(event) {
-            let popup = document.getElementById("popup");
-            popup.style.display = "block";
-            popup.style.left = event.clientX + "px";
-            popup.style.top = event.clientY + "px";
+        function iniciarArrasto(event) {
+            bolinhaSelecionada = event.target;
+            bolinhaSelecionada.style.cursor = "grabbing";
+
+            function moverBolinha(moveEvent) {
+                let mapaRect = mapaContainer.getBoundingClientRect();
+                let x = moveEvent.clientX - mapaRect.left;
+                let y = moveEvent.clientY - mapaRect.top;
+                bolinhaSelecionada.style.left = `${x}px`;
+                bolinhaSelecionada.style.top = `${y}px`;
+            }
+
+            function soltarBolinha() {
+                bolinhaSelecionada.style.cursor = "grab";
+                document.removeEventListener("mousemove", moverBolinha);
+                document.removeEventListener("mouseup", soltarBolinha);
+                abrirPopUp(bolinhaSelecionada);
+            }
+
+            document.addEventListener("mousemove", moverBolinha);
+            document.addEventListener("mouseup", soltarBolinha);
         }
 
-        function salvarCoordenadas() {
+        function abrirPopUp(bolinha) {
+            let popup = document.getElementById("popup");
+            popup.style.display = "block";
+            popup.style.left = bolinha.style.left;
+            popup.style.top = bolinha.style.top;
+            bolinhaSelecionada = bolinha;
+        }
+
+        async function salvarCoordenadas() {
             let quadra = document.getElementById("quadra").value;
             let lote = document.getElementById("lote").value;
-            alert(`Bolinha salva! Quadra: ${quadra}, Lote: ${lote}`);
+            if (!quadra || !lote) {
+                alert("Selecione Quadra e Lote!");
+                return;
+            }
+
+            let x = parseInt(bolinhaSelecionada.style.left);
+            let y = parseInt(bolinhaSelecionada.style.top);
+
+            const response = await fetch(API_URL, {
+                method: "POST",
+                body: JSON.stringify({ quadra, lote, x, y }),
+                headers: { "Content-Type": "application/json" }
+            });
+
+            alert("Bolinha salva! Quadra: " + quadra + ", Lote: " + lote);
+            document.getElementById("popup").style.display = "none";
         }
 
         function excluirBolinha() {
