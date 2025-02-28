@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mapa de Disponibilidade</title>
+    <title>Mapa de Lotes</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -21,10 +21,17 @@
         }
         .bolinha {
             position: absolute;
-            width: 10px;
-            height: 10px;
+            width: 15px;
+            height: 15px;
             border-radius: 50%;
             cursor: pointer;
+            text-align: center;
+            font-size: 10px;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
             transform: translate(-50%, -50%);
         }
         .verde { background-color: green; }
@@ -34,7 +41,7 @@
 </head>
 <body>
 
-    <h1>Mapa de Disponibilidade</h1>
+    <h1>Mapa de Lotes</h1>
 
     <div id="mapa-container">
         <img id="mapa" src="implantacao.png" alt="Mapa de Implantação">
@@ -45,38 +52,41 @@
 
         async function carregarBolinhas() {
             try {
+                console.log("🔄 Buscando coordenadas da API...");
                 const response = await fetch(API_URL);
                 const data = await response.json();
-                let mapa = document.getElementById("mapa-container");
+                console.log("✅ Coordenadas recebidas:", data);
+
+                let mapaContainer = document.getElementById("mapa-container");
 
                 data.forEach(lote => {
                     let { quadra, loteNum, status, x, y } = lote;
-
-                    if (!x || !y) return;
-
+                    
                     let bolinha = document.createElement("div");
                     bolinha.classList.add("bolinha");
+                    bolinha.textContent = loteNum; // Mostra o número do lote dentro da bolinha
+                    
+                    // Define a cor com base no status
+                    if (status === "Disponível") bolinha.classList.add("verde");
+                    else if (status === "Reservado") bolinha.classList.add("laranja");
+                    else if (status === "Vendido") bolinha.classList.add("vermelho");
 
-                    if (status === "disponível") bolinha.classList.add("verde");
-                    else if (status === "reservado") bolinha.classList.add("laranja");
-                    else bolinha.classList.add("vermelho");
-
+                    // Posiciona corretamente no mapa
                     bolinha.style.left = `${x}px`;
                     bolinha.style.top = `${y}px`;
 
-                    mapa.appendChild(bolinha);
+                    mapaContainer.appendChild(bolinha);
                 });
-
             } catch (error) {
-                console.error("❌ Erro ao carregar dados:", error);
-                alert("Erro ao carregar os dados do mapa.");
+                console.error("❌ Erro ao carregar coordenadas:", error);
+                alert("Erro ao carregar os lotes do mapa.");
             }
         }
 
+        // Carregar bolinhas ao iniciar a página
         carregarBolinhas();
     </script>
 
 </body>
 </html>
-
 
