@@ -2,129 +2,18 @@
 <html lang="pt">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mapa de Loteamento</title>
-    <script>
-        let quadras = [];
-        let lotes = {};
-        let bolinhas = [];
-        
-        async function carregarDados() {
-            const response = await fetch("https://script.google.com/macros/s/YOUR_GOOGLE_SCRIPT_ID/exec");
-            const data = await response.json();
-            
-            quadras = [...new Set(data.map(item => item.quadra))];
-            
-            quadras.forEach(quadra => {
-                lotes[quadra] = data.filter(item => item.quadra === quadra).map(item => item.lote);
-            });
-        }
-
-        function abrirPopup(event) {
-            const x = event.offsetX;
-            const y = event.offsetY;
-            document.getElementById("popup").style.display = "block";
-            document.getElementById("posX").value = x;
-            document.getElementById("posY").value = y;
-            preencherQuadras();
-        }
-
-        function preencherQuadras() {
-            let selectQuadra = document.getElementById("quadra");
-            selectQuadra.innerHTML = "";
-            quadras.forEach(q => {
-                let option = document.createElement("option");
-                option.value = q;
-                option.textContent = q;
-                selectQuadra.appendChild(option);
-            });
-            preencherLotes();
-        }
-
-        function preencherLotes() {
-            let quadraSelecionada = document.getElementById("quadra").value;
-            let selectLote = document.getElementById("lote");
-            selectLote.innerHTML = "";
-            lotes[quadraSelecionada].forEach(l => {
-                let option = document.createElement("option");
-                option.value = l;
-                option.textContent = l;
-                selectLote.appendChild(option);
-            });
-        }
-
-        function aplicarBola() {
-            let x = document.getElementById("posX").value;
-            let y = document.getElementById("posY").value;
-            let quadra = document.getElementById("quadra").value;
-            let lote = document.getElementById("lote").value;
-            
-            let bolinha = document.createElement("div");
-            bolinha.classList.add("bolinha");
-            bolinha.style.left = `${x}px`;
-            bolinha.style.top = `${y}px`;
-            bolinha.dataset.quadra = quadra;
-            bolinha.dataset.lote = lote;
-            document.getElementById("mapa-container").appendChild(bolinha);
-            
-            bolinhas.push({x, y, quadra, lote});
-            salvarBolinhas();
-            
-            document.getElementById("popup").style.display = "none";
-        }
-
-        function salvarBolinhas() {
-            localStorage.setItem("bolinhas", JSON.stringify(bolinhas));
-        }
-
-        function carregarBolinhas() {
-            let bolinhasSalvas = JSON.parse(localStorage.getItem("bolinhas")) || [];
-            bolinhasSalvas.forEach(({x, y, quadra, lote}) => {
-                let bolinha = document.createElement("div");
-                bolinha.classList.add("bolinha");
-                bolinha.style.left = `${x}px`;
-                bolinha.style.top = `${y}px`;
-                bolinha.dataset.quadra = quadra;
-                bolinha.dataset.lote = lote;
-                document.getElementById("mapa-container").appendChild(bolinha);
-            });
-        }
-    </script>
-    <style>
-        #mapa-container {
-            position: relative;
-            display: inline-block;
-        }
-        .bolinha {
-            width: 20px;
-            height: 20px;
-            background-color: red;
-            border-radius: 50%;
-            position: absolute;
-            transform: translate(-50%, -50%);
-        }
-        #popup {
-            display: none;
-            position: absolute;
-            background: white;
-            padding: 10px;
-            border: 1px solid black;
-        }
-    </style>
+    <title>Configuração</title>
 </head>
-<body onload="carregarDados(); carregarBolinhas();">
-    <div id="mapa-container" onclick="abrirPopup(event)">
-        <img src="implantacao.png" style="width: 100%;">
-    </div>
+<body onload="carregarDados()">
+    <h1>Configuração</h1>
+    <label>Quadra:</label>
+    <select id="quadra" onchange="preencherLotes()"></select>
     
-    <div id="popup">
-        <label>Quadra:</label>
-        <select id="quadra" onchange="preencherLotes()"></select>
-        <label>Lote:</label>
-        <select id="lote"></select>
-        <input type="hidden" id="posX">
-        <input type="hidden" id="posY">
-        <button onclick="aplicarBola()">Aplicar</button>
-    </div>
+    <label>Lote:</label>
+    <select id="lote"></select>
+
+    <button onclick="salvarBolinhas()">Salvar Aplicação</button>
+
+    <script src="script.js"></script>
 </body>
 </html>
