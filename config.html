@@ -1,3 +1,4 @@
+<!-- config.html -->
 <!DOCTYPE html>
 <html lang="pt">
 <head>
@@ -21,105 +22,81 @@
         }
         .bolinha {
             position: absolute;
-            width: 10px; /* Reduzida em 50% */
+            width: 10px; /* 50% menor */
             height: 10px;
             border-radius: 50%;
-            border: 1px solid black;
-            cursor: grab;
+            border: 1px solid black; /* Borda bem fina */
+            cursor: pointer;
         }
-        .verde { background-color: green; }
-        .laranja { background-color: orange; }
-        .vermelho { background-color: red; }
         #config-form {
             margin-top: 20px;
         }
     </style>
 </head>
 <body>
-
     <h1>Configuração do Mapa</h1>
     <button onclick="gerarBolinha()">Gerar Bolinha</button>
-    <button onclick="excluirBolinha()">Excluir Bolinha</button>
-
+    <button onclick="excluirBolinhaSelecionada()">Excluir Bolinha</button>
+    
     <div id="mapa-container">
         <img id="mapa" src="implantacao.png" alt="Mapa de Implantação">
     </div>
 
     <script>
         const API_URL = "https://script.google.com/macros/s/AKfycbzL2zXBQFJq1oTUbP2jZeOvpKqJnD4NI1b_dx8vhTTD_Omp9TolsP9-CyH8db-btd7mow/exec";
-        let bolinhas = [];
+        let bolinhaSelecionada = null;
 
         function gerarBolinha() {
             let bolinha = document.createElement("div");
-            bolinha.classList.add("bolinha", "verde"); // Cor padrão
-
+            bolinha.classList.add("bolinha");
             bolinha.style.left = "50%";
             bolinha.style.top = "50%";
-            bolinha.draggable = true;
-            bolinha.addEventListener("mousedown", iniciarArraste);
-
             document.getElementById("mapa-container").appendChild(bolinha);
-            bolinhas.push(bolinha);
+
+            bolinha.addEventListener("click", () => abrirPopUp(bolinha));
+            bolinha.addEventListener("mousedown", iniciarArraste);
+        }
+
+        function abrirPopUp(bolinha) {
+            let quadra = prompt("Digite a quadra:");
+            let lote = prompt("Digite o lote:");
+            if (quadra && lote) {
+                bolinha.dataset.quadra = quadra;
+                bolinha.dataset.lote = lote;
+                salvarCoordenadas(quadra, lote, bolinha.style.left, bolinha.style.top);
+            }
+        }
+
+        function salvarCoordenadas(quadra, lote, x, y) {
+            fetch(API_URL, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ quadra, lote, x, y })
+            })
+            .then(response => response.json())
+            .then(data => alert("Coordenadas salvas com sucesso!"))
+            .catch(error => console.error("Erro ao salvar:", error));
+        }
+
+        function excluirBolinhaSelecionada() {
+            if (bolinhaSelecionada) {
+                bolinhaSelecionada.remove();
+                bolinhaSelecionada = null;
+            }
         }
 
         function iniciarArraste(event) {
             let bolinha = event.target;
-            let shiftX = event.clientX - bolinha.getBoundingClientRect().left;
-            let shiftY = event.clientY - bolinha.getBoundingClientRect().top;
-
-            function moverBolinha(event) {
-                bolinha.style.left = event.pageX - shiftX + "px";
-                bolinha.style.top = event.pageY - shiftY + "px";
+            function mover(event) {
+                bolinha.style.left = event.clientX - 5 + "px";
+                bolinha.style.top = event.clientY - 5 + "px";
             }
-
-            function soltarBolinha() {
-                document.removeEventListener("mousemove", moverBolinha);
-                document.removeEventListener("mouseup", soltarBolinha);
-                abrirPopup(bolinha);
-            }
-
-            document.addEventListener("mousemove", moverBolinha);
-            document.addEventListener("mouseup", soltarBolinha);
-        }
-
-        function abrirPopup(bolinha) {
-            let quadra = prompt("Digite a quadra:");
-            let lote = prompt("Digite o lote:");
-
-            if (quadra && lote) {
-                salvarCoordenadas(quadra, lote, bolinha);
-            }
-        }
-
-        async function salvarCoordenadas(quadra, lote, bolinha) {
-            let coordenadas = {
-                quadra: quadra,
-                lote: lote,
-                x: bolinha.style.left,
-                y: bolinha.style.top
-            };
-
-            try {
-                let response = await fetch(API_URL, {
-                    method: "POST",
-                    body: JSON.stringify(coordenadas),
-                    headers: { "Content-Type": "application/json" }
-                });
-                let result = await response.json();
-                alert(result.mensagem || "Salvo com sucesso!");
-            } catch (error) {
-                console.error("Erro ao salvar:", error);
-                alert("Erro ao salvar as coordenadas.");
-            }
-        }
-
-        function excluirBolinha() {
-            if (bolinhas.length > 0) {
-                let bolinha = bolinhas.pop();
-                bolinha.remove();
-            }
+            document.addEventListener("mousemove", mover);
+            document.addEventListener("mouseup", () => {
+                document.removeEventListener("mousemove", mover);
+                abrirPopUp(bolinha);
+            }, { once: true });
         }
     </script>
-
 </body>
 </html>
