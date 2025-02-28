@@ -1,10 +1,9 @@
-<!-- config.html -->
 <!DOCTYPE html>
 <html lang="pt">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Configuração do Mapa</title>
+    <title>Configurar Mapa</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -27,93 +26,92 @@
             border-radius: 50%;
             cursor: pointer;
         }
-        #config-form {
-            margin-top: 20px;
-        }
-        .tabela-dados {
-            width: 80%;
-            margin: 20px auto;
-            border-collapse: collapse;
-        }
-        .tabela-dados th, .tabela-dados td {
-            border: 1px solid #ddd;
-            padding: 8px;
-            text-align: center;
-        }
+        .verde { background-color: green; }
+        .laranja { background-color: orange; }
+        .vermelho { background-color: red; }
     </style>
 </head>
 <body>
+
     <h1>Configuração do Mapa</h1>
+
     <div id="mapa-container">
         <img id="mapa" src="implantacao.png" alt="Mapa de Implantação">
     </div>
-    <button onclick="adicionarBolinha()">Gerar Bolinha</button>
-    <table class="tabela-dados" id="tabelaQuadras">
-        <thead>
-            <tr>
-                <th>Quadra</th>
-                <th>Lote</th>
-                <th>Excluir</th>
-            </tr>
-        </thead>
-        <tbody></tbody>
-    </table>
+
+    <button onclick="adicionarBolinha()">Adicionar Bolinha</button>
+
     <script>
         const API_URL = "https://script.google.com/macros/s/AKfycbzL2zXBQFJq1oTUbP2jZeOvpKqJnD4NI1b_dx8vhTTD_Omp9TolsP9-CyH8db-btd7mow/exec";
-        
-        async function carregarDados() {
-            try {
-                const response = await fetch(API_URL);
-                const data = await response.json();
-                console.log("✅ Dados recebidos:", data);
-                const tabela = document.getElementById("tabelaQuadras").getElementsByTagName("tbody")[0];
-                tabela.innerHTML = "";
-                data.forEach((lote) => {
-                    let tr = tabela.insertRow();
-                    tr.innerHTML = `<td>${lote.quadra}</td><td>${lote.lote}</td><td><button onclick="removerBolinha('${lote.quadra}', '${lote.lote}')">❌</button></td>`;
-                });
-            } catch (error) {
-                console.error("❌ Erro ao carregar dados:", error);
-                alert("Erro ao carregar os dados da planilha.");
-            }
-        }
-        
+
         function adicionarBolinha() {
             let mapa = document.getElementById("mapa-container");
+
             let bolinha = document.createElement("div");
-            bolinha.className = "bolinha";
+            bolinha.classList.add("bolinha", "verde");
             bolinha.style.left = "50%";
             bolinha.style.top = "50%";
-            bolinha.style.backgroundColor = "blue";
-            bolinha.draggable = true;
             mapa.appendChild(bolinha);
-            bolinha.addEventListener("dragend", (event) => {
-                bolinha.style.left = `${event.pageX - mapa.offsetLeft}px`;
-                bolinha.style.top = `${event.pageY - mapa.offsetTop}px`;
-                let quadra = prompt("Digite a Quadra:");
-                let lote = prompt("Digite o Lote:");
-                salvarCoordenadas(quadra, lote, event.pageX, event.pageY);
-            });
+
+            bolinha.addEventListener("click", () => selecionarQuadraLote(bolinha));
+            moverBolinha(bolinha);
         }
-        
-        function salvarCoordenadas(quadra, lote, x, y) {
-            if (!quadra || !lote) {
-                alert("Quadra e Lote são obrigatórios!");
-                return;
+
+        function moverBolinha(bolinha) {
+            bolinha.onmousedown = function (event) {
+                event.preventDefault();
+
+                let shiftX = event.clientX - bolinha.getBoundingClientRect().left;
+                let shiftY = event.clientY - bolinha.getBoundingClientRect().top;
+
+                function moveAt(pageX, pageY) {
+                    let mapa = document.getElementById("mapa-container");
+                    let bounds = mapa.getBoundingClientRect();
+
+                    let xPercent = ((pageX - bounds.left - shiftX) / bounds.width) * 100;
+                    let yPercent = ((pageY - bounds.top - shiftY) / bounds.height) * 100;
+
+                    bolinha.style.left = `${xPercent}%`;
+                    bolinha.style.top = `${yPercent}%`;
+                }
+
+                function onMouseMove(event) {
+                    moveAt(event.pageX, event.pageY);
+                }
+
+                document.addEventListener("mousemove", onMouseMove);
+
+                bolinha.onmouseup = function () {
+                    document.removeEventListener("mousemove", onMouseMove);
+                    selecionarQuadraLote(bolinha);
+                };
+            };
+        }
+
+        function selecionarQuadraLote(bolinha) {
+            let quadra = prompt("Digite a Quadra:");
+            let lote = prompt("Digite o Lote:");
+
+            if (quadra && lote) {
+                salvarCoordenadas(quadra, lote, bolinha);
             }
+        }
+
+        function salvarCoordenadas(quadra, lote, bolinha) {
+            let x = bolinha.style.left.replace("%", "");
+            let y = bolinha.style.top.replace("%", "");
+
             fetch(API_URL, {
                 method: "POST",
                 body: JSON.stringify({ quadra, lote, x, y }),
-            }).then(() => carregarDados());
+                headers: { "Content-Type": "application/json" }
+            })
+            .then(response => response.json())
+            .then(data => console.log("Salvo!", data))
+            .catch(error => console.error("Erro:", error));
         }
-        
-        function removerBolinha(quadra, lote) {
-            fetch(API_URL + "?delete=1&quadra=" + quadra + "&lote=" + lote, { method: "POST" })
-                .then(() => carregarDados());
-        }
-        
-        carregarDados();
     </script>
+
 </body>
 </html>
 
