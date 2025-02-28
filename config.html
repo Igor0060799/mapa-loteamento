@@ -25,26 +25,27 @@
             height: 10px;
             border-radius: 50%;
             cursor: pointer;
-            border: 1px solid black;
-            transform: translate(-50%, -50%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 10px;
+            color: white;
         }
         .verde { background-color: green; }
         .laranja { background-color: orange; }
         .vermelho { background-color: red; }
-        #config-form {
-            margin-top: 20px;
-        }
-        table {
-            width: 100%;
-            margin-top: 20px;
-            border-collapse: collapse;
-        }
-        table, th, td {
-            border: 1px solid black;
-        }
-        th, td {
+        .popup {
+            display: none;
+            position: absolute;
+            background: white;
+            border: 1px solid #ccc;
             padding: 10px;
-            text-align: center;
+        }
+        .botao {
+            margin: 10px;
+            padding: 8px;
+            font-size: 14px;
+            cursor: pointer;
         }
     </style>
 </head>
@@ -52,164 +53,104 @@
 
     <h1>Configuração do Mapa</h1>
 
-    <button onclick="criarBolinha()">Gerar Bolinha</button>
+    <button class="botao" onclick="criarBolinha()">Gerar Bolinha</button>
+    <button class="botao" onclick="excluirBolinha()">Excluir Bolinha</button>
 
     <div id="mapa-container">
         <img id="mapa" src="implantacao.png" alt="Mapa de Implantação">
     </div>
 
-    <div id="config-form">
+    <div id="popup" class="popup">
         <label for="quadra">Quadra:</label>
         <select id="quadra"></select>
-
         <label for="lote">Lote:</label>
         <select id="lote"></select>
-
         <button onclick="salvarCoordenadas()">Salvar</button>
-        <button onclick="excluirBolinha()">Excluir Bolinha</button>
     </div>
 
-    <table>
-        <thead>
-            <tr>
-                <th>Quadra</th>
-                <th>Lote</th>
-                <th>Status</th>
-            </tr>
-        </thead>
-        <tbody id="tabela-lotes"></tbody>
-    </table>
-
     <script>
-        let bolinhaAtual = null;
         const API_URL = "https://script.google.com/macros/s/AKfycbzL2zXBQFJq1oTUbP2jZeOvpKqJnD4NI1b_dx8vhTTD_Omp9TolsP9-CyH8db-btd7mow/exec";
+        let mapaContainer = document.getElementById("mapa-container");
+        let bolinhas = [];
 
-        async function carregarDados() {
-            try {
-                console.log("🔄 Buscando dados da API...");
-                const response = await fetch(API_URL);
-                const data = await response.json();
-                console.log("✅ Dados recebidos:", data);
+        async function carregarQuadrasELotes() {
+            const response = await fetch(API_URL);
+            const data = await response.json();
+            let quadraSelect = document.getElementById("quadra");
+            let loteSelect = document.getElementById("lote");
 
-                let quadras = new Set();
-                let lotes = {};
-                let tabela = document.getElementById("tabela-lotes");
+            let quadras = new Set();
+            let lotes = {};
 
-                tabela.innerHTML = "";
+            data.forEach(lote => {
+                let quadra = lote[0];
+                let loteNum = lote[1];
 
-                data.forEach(lote => {
-                    let { quadra, loteNum, status, x, y } = lote;
+                if (quadra && loteNum) {
+                    quadras.add(quadra);
+                    if (!lotes[quadra]) lotes[quadra] = [];
+                    lotes[quadra].push(loteNum);
+                }
+            });
 
-                    if (quadra && loteNum) {
-                        quadras.add(quadra);
-                        if (!lotes[quadra]) lotes[quadra] = [];
-                        lotes[quadra].push(loteNum);
-                    }
+            quadraSelect.innerHTML = "";
+            loteSelect.innerHTML = "";
 
-                    // Adicionar à tabela
-                    let row = tabela.insertRow();
-                    row.insertCell(0).textContent = quadra;
-                    row.insertCell(1).textContent = loteNum;
-                    row.insertCell(2).textContent = status;
-                });
+            quadras.forEach(quadra => {
+                let option = document.createElement("option");
+                option.value = quadra;
+                option.textContent = quadra;
+                quadraSelect.appendChild(option);
+            });
 
-                let quadraSelect = document.getElementById("quadra");
-                let loteSelect = document.getElementById("lote");
-
-                quadraSelect.innerHTML = "";
+            quadraSelect.addEventListener("change", function() {
                 loteSelect.innerHTML = "";
+                let quadraSelecionada = quadraSelect.value;
+                if (lotes[quadraSelecionada]) {
+                    lotes[quadraSelecionada].forEach(lote => {
+                        let option = document.createElement("option");
+                        option.value = lote;
+                        option.textContent = lote;
+                        loteSelect.appendChild(option);
+                    });
+                }
+            });
 
-                quadras.forEach(quadra => {
-                    let option = document.createElement("option");
-                    option.value = quadra;
-                    option.textContent = quadra;
-                    quadraSelect.appendChild(option);
-                });
-
-                quadraSelect.addEventListener("change", function() {
-                    loteSelect.innerHTML = "";
-                    let quadraSelecionada = quadraSelect.value;
-                    if (lotes[quadraSelecionada]) {
-                        lotes[quadraSelecionada].forEach(lote => {
-                            let option = document.createElement("option");
-                            option.value = lote;
-                            option.textContent = lote;
-                            loteSelect.appendChild(option);
-                        });
-                    }
-                });
-
-                quadraSelect.dispatchEvent(new Event("change"));
-            } catch (error) {
-                console.error("❌ Erro ao carregar dados:", error);
-                alert("Erro ao carregar os dados da planilha.");
-            }
+            quadraSelect.dispatchEvent(new Event("change"));
         }
 
         function criarBolinha() {
-            let mapa = document.getElementById("mapa-container");
             let bolinha = document.createElement("div");
             bolinha.classList.add("bolinha", "verde");
-            bolinha.style.left = "400px";
-            bolinha.style.top = "300px";
+            bolinha.style.left = "50%";
+            bolinha.style.top = "50%";
             bolinha.draggable = true;
-
-            bolinha.addEventListener("mousedown", (event) => {
-                bolinhaAtual = bolinha;
-                document.addEventListener("mousemove", moverBolinha);
-            });
-
-            document.addEventListener("mouseup", () => {
-                document.removeEventListener("mousemove", moverBolinha);
-            });
-
-            mapa.appendChild(bolinha);
+            mapaContainer.appendChild(bolinha);
+            bolinha.addEventListener("click", abrirPopUp);
+            bolinhas.push(bolinha);
         }
 
-        function moverBolinha(event) {
-            if (!bolinhaAtual) return;
-            let rect = document.getElementById("mapa").getBoundingClientRect();
-            bolinhaAtual.style.left = `${event.clientX - rect.left}px`;
-            bolinhaAtual.style.top = `${event.clientY - rect.top}px`;
+        function abrirPopUp(event) {
+            let popup = document.getElementById("popup");
+            popup.style.display = "block";
+            popup.style.left = event.clientX + "px";
+            popup.style.top = event.clientY + "px";
         }
 
         function salvarCoordenadas() {
-            if (!bolinhaAtual) {
-                alert("Nenhuma bolinha selecionada!");
-                return;
-            }
-
             let quadra = document.getElementById("quadra").value;
             let lote = document.getElementById("lote").value;
-            let x = parseInt(bolinhaAtual.style.left);
-            let y = parseInt(bolinhaAtual.style.top);
-
-            fetch(API_URL, {
-                method: "POST",
-                body: JSON.stringify({ quadra, lote, x, y }),
-                headers: { "Content-Type": "application/json" }
-            })
-            .then(response => response.json())
-            .then(data => {
-                console.log("✅ Salvo com sucesso:", data);
-                alert("Coordenadas salvas!");
-                carregarDados(); // Atualiza a tabela automaticamente
-            })
-            .catch(error => {
-                console.error("❌ Erro ao salvar:", error);
-                alert("Erro ao salvar!");
-            });
+            alert(`Bolinha salva! Quadra: ${quadra}, Lote: ${lote}`);
         }
 
         function excluirBolinha() {
-            if (bolinhaAtual) {
-                bolinhaAtual.remove();
-                bolinhaAtual = null;
+            if (bolinhas.length > 0) {
+                let bolinhaRemovida = bolinhas.pop();
+                bolinhaRemovida.remove();
             }
         }
 
-        // Carregar dados ao iniciar
-        carregarDados();
+        carregarQuadrasELotes();
     </script>
 
 </body>
