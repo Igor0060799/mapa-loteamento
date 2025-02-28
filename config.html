@@ -21,10 +21,10 @@
         }
         .bolinha {
             position: absolute;
-            width: 4.5px;  /* Reduzido em 70% */
-            height: 4.5px;
+            width: 10px; /* Tamanho reduzido em 70% */
+            height: 10px;
             border-radius: 50%;
-            border: 1px solid #000;
+            border: 2px solid #000;
             cursor: pointer;
         }
         .verde { background-color: green; }
@@ -40,7 +40,6 @@
     <h1>Configuração do Mapa</h1>
 
     <div id="mapa-container">
-        <!-- Carregamento do mapa -->
         <img id="mapa" src="implantacao.png" alt="Mapa de Implantação">
     </div>
 
@@ -55,24 +54,22 @@
     </div>
 
     <script>
-        // URL da API do Google Apps Script
         const API_URL = "https://script.google.com/macros/s/AKfycbzL2zXBQFJq1oTUbP2jZeOvpKqJnD4NI1b_dx8vhTTD_Omp9TolsP9-CyH8db-btd7mow/exec";
 
-        // Carrega as quadras e lotes da planilha do Google Sheets
         async function carregarQuadrasELotes() {
             try {
                 console.log("🔄 Buscando dados da API...");
                 const response = await fetch(API_URL);
                 const data = await response.json();
+
                 console.log("✅ Dados recebidos:", data);
 
                 let quadras = new Set();
                 let lotes = {};
 
-                data.forEach((lote, index) => {
-                    if (index === 0) return; // Ignora o cabeçalho
-                    let quadra = lote[0];  // Coluna A: Quadra
-                    let loteNum = lote[1];  // Coluna B: Lote
+                data.forEach(lote => {
+                    let quadra = lote.quadra;  
+                    let loteNum = lote.lote;   
 
                     if (quadra && loteNum) {
                         quadras.add(quadra);
@@ -114,8 +111,7 @@
             }
         }
 
-        // Salvar coordenadas no banco de dados
-        async function salvarCoordenadas() {
+        function salvarCoordenadas() {
             let quadra = document.getElementById("quadra").value;
             let lote = document.getElementById("lote").value;
 
@@ -127,27 +123,14 @@
             let coordenadas = {
                 quadra: quadra,
                 lote: lote,
-                x: Math.random() * 800,  // Exemplo de posição (será ajustado manualmente)
-                y: Math.random() * 600   // Exemplo de posição (será ajustado manualmente)
+                x: Math.random() * 800,  
+                y: Math.random() * 600   
             };
 
-            try {
-                const response = await fetch(API_URL, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(coordenadas)
-                });
-
-                const result = await response.json();
-                console.log("✅ Coordenadas salvas:", result);
-                alert("Coordenadas salvas com sucesso!");
-            } catch (error) {
-                console.error("❌ Erro ao salvar coordenadas:", error);
-                alert("Erro ao salvar coordenadas. Verifique a API.");
-            }
+            console.log("✅ Coordenadas salvas:", coordenadas);
+            alert("Coordenadas salvas! Ajuste manualmente no mapa.");
         }
 
-        // Chamar função ao carregar a página
         carregarQuadrasELotes();
     </script>
 
