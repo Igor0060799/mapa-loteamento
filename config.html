@@ -1,7 +1,10 @@
 async function carregarQuadrasELotes() {
     try {
         console.log("🔄 Buscando dados da API...");
-        const response = await fetch(API_URL, { method: "GET", mode: "cors" });
+        const response = await fetch(API_URL, { 
+            method: "GET", 
+            mode: "cors" // Permite chamadas externas
+        });
 
         if (!response.ok) {
             throw new Error(`Erro na requisição: ${response.status}`);
@@ -9,6 +12,10 @@ async function carregarQuadrasELotes() {
 
         const data = await response.json();
         console.log("✅ Dados recebidos:", data);
+
+        if (!Array.isArray(data)) {
+            throw new Error("Os dados recebidos não estão no formato correto.");
+        }
 
         let quadras = new Set();
         let lotes = {};
