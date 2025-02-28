@@ -21,63 +21,40 @@
         }
         .bolinha {
             position: absolute;
-            width: 7px;
-            height: 7px;
+            width: 8px; /* Reduzido 50% */
+            height: 8px; /* Reduzido 50% */
             border-radius: 50%;
-            border: 1px solid gray;
-            cursor: grab;
+            border: 1px solid #000; /* Borda bem fininha */
+            cursor: pointer;
         }
         .verde { background-color: green; }
         .laranja { background-color: orange; }
         .vermelho { background-color: red; }
-        #config-popup {
-            display: none;
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: white;
-            padding: 15px;
-            border: 1px solid #ccc;
-            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.2);
+        #config-form {
+            margin-top: 20px;
         }
         table {
             width: 100%;
-            border-collapse: collapse;
             margin-top: 20px;
+            border-collapse: collapse;
         }
         th, td {
             border: 1px solid #ccc;
-            padding: 8px;
+            padding: 5px;
             text-align: center;
-        }
-        th {
-            background-color: #f4f4f4;
         }
     </style>
 </head>
 <body>
 
     <h1>Configuração do Mapa</h1>
-
     <button onclick="gerarBolinha()">Gerar Bolinha</button>
-    <button onclick="excluirBolinha()">Excluir Bolinha</button>
 
     <div id="mapa-container">
         <img id="mapa" src="implantacao.png" alt="Mapa de Implantação">
     </div>
 
-    <div id="config-popup">
-        <h3>Selecionar Quadra e Lote</h3>
-        <label for="quadra">Quadra:</label>
-        <select id="quadra"></select>
-        <label for="lote">Lote:</label>
-        <select id="lote"></select>
-        <button onclick="confirmarBolinha()">Confirmar</button>
-    </div>
-
-    <h2>📋 Planilha de Lotes</h2>
-    <table id="planilha">
+    <table>
         <thead>
             <tr>
                 <th>Quadra</th>
@@ -85,152 +62,68 @@
                 <th>Status</th>
             </tr>
         </thead>
-        <tbody></tbody>
+        <tbody id="tabela-dados"></tbody>
     </table>
 
     <script>
         const API_URL = "https://script.google.com/macros/s/AKfycbzL2zXBQFJq1oTUbP2jZeOvpKqJnD4NI1b_dx8vhTTD_Omp9TolsP9-CyH8db-btd7mow/exec";
-        let bolinhaSelecionada = null;
-        let isDragging = false;
-        let lotesData = [];
+        let dadosPlanilha = [];
 
-        async function carregarPlanilha() {
+        async function carregarDados() {
             try {
-                console.log("🔄 Buscando dados da API...");
                 const response = await fetch(API_URL);
-                lotesData = await response.json();
-                console.log("✅ Dados recebidos:", lotesData);  // LOG PARA VERIFICAR OS DADOS
-
-                if (!Array.isArray(lotesData) || lotesData.length === 0) {
-                    console.error("❌ Nenhum dado válido recebido.");
-                    return;
-                }
-
-                let tbody = document.getElementById("planilha").querySelector("tbody");
-                tbody.innerHTML = "";
-
-                let quadras = new Set();
-                let lotesPorQuadra = {};
-
-                lotesData.forEach(lote => {
-                    let [quadra, loteNum, status] = lote;
-
-                    let tr = document.createElement("tr");
-                    tr.innerHTML = `<td>${quadra}</td><td>${loteNum}</td><td>${status}</td>`;
-                    tbody.appendChild(tr);
-
-                    quadras.add(quadra);
-                    if (!lotesPorQuadra[quadra]) lotesPorQuadra[quadra] = [];
-                    lotesPorQuadra[quadra].push({ loteNum, status });
-                });
-
-                let quadraSelect = document.getElementById("quadra");
-                let loteSelect = document.getElementById("lote");
-
-                quadraSelect.innerHTML = "";
-                loteSelect.innerHTML = "";
-
-                quadras.forEach(quadra => {
-                    let option = document.createElement("option");
-                    option.value = quadra;
-                    option.textContent = quadra;
-                    quadraSelect.appendChild(option);
-                });
-
-                quadraSelect.addEventListener("change", function() {
-                    let quadraSelecionada = quadraSelect.value;
-                    loteSelect.innerHTML = "";
-
-                    if (lotesPorQuadra[quadraSelecionada]) {
-                        lotesPorQuadra[quadraSelecionada].forEach(({ loteNum }) => {
-                            let option = document.createElement("option");
-                            option.value = loteNum;
-                            option.textContent = loteNum;
-                            loteSelect.appendChild(option);
-                        });
-                    }
-                });
-
-                quadraSelect.dispatchEvent(new Event("change"));
+                const data = await response.json();
+                dadosPlanilha = data;
+                atualizarTabela();
             } catch (error) {
-                console.error("❌ Erro ao carregar dados:", error);
+                console.error("Erro ao carregar dados:", error);
                 alert("Erro ao carregar os dados da planilha.");
             }
         }
 
+        function atualizarTabela() {
+            const tabela = document.getElementById("tabela-dados");
+            tabela.innerHTML = "";
+            dadosPlanilha.forEach(dado => {
+                let linha = `<tr>
+                    <td>${dado[0]}</td>
+                    <td>${dado[1]}</td>
+                    <td>${dado[2]}</td>
+                </tr>`;
+                tabela.innerHTML += linha;
+            });
+        }
+
         function gerarBolinha() {
             let bolinha = document.createElement("div");
-            bolinha.classList.add("bolinha");
+            bolinha.classList.add("bolinha", "verde");
             bolinha.style.left = "50%";
             bolinha.style.top = "50%";
-
-            bolinha.addEventListener("mousedown", function(event) {
-                bolinhaSelecionada = bolinha;
-                isDragging = true;
-                document.addEventListener("mousemove", moverBolinha);
-                document.addEventListener("mouseup", soltarBolinha);
-            });
-
+            bolinha.setAttribute("draggable", true);
+            bolinha.addEventListener("dragend", moverBolinha);
+            bolinha.addEventListener("click", selecionarQuadraLote);
             document.getElementById("mapa-container").appendChild(bolinha);
         }
 
         function moverBolinha(event) {
-            if (isDragging && bolinhaSelecionada) {
-                let rect = document.getElementById("mapa").getBoundingClientRect();
-                let x = event.clientX - rect.left;
-                let y = event.clientY - rect.top;
-
-                bolinhaSelecionada.style.left = `${x}px`;
-                bolinhaSelecionada.style.top = `${y}px`;
-            }
+            let bolinha = event.target;
+            let rect = document.getElementById("mapa").getBoundingClientRect();
+            let x = event.clientX - rect.left;
+            let y = event.clientY - rect.top;
+            bolinha.style.left = `${x}px`;
+            bolinha.style.top = `${y}px`;
         }
 
-        function soltarBolinha() {
-            if (isDragging) {
-                isDragging = false;
-                document.removeEventListener("mousemove", moverBolinha);
-                document.removeEventListener("mouseup", soltarBolinha);
-                document.getElementById("config-popup").style.display = "block";
-            }
+        function selecionarQuadraLote(event) {
+            let quadras = [...new Set(dadosPlanilha.map(d => d[0]))];
+            let quadraSelecionada = prompt("Selecione a quadra:", quadras.join(", "));
+            let lotes = dadosPlanilha.filter(d => d[0] === quadraSelecionada).map(d => d[1]);
+            let loteSelecionado = prompt("Selecione o lote:", lotes.join(", "));
+            alert(`Quadra: ${quadraSelecionada}, Lote: ${loteSelecionado} selecionado!`);
         }
 
-        function confirmarBolinha() {
-            let quadra = document.getElementById("quadra").value;
-            let lote = document.getElementById("lote").value;
-
-            let status = lotesData.find(item => item[0] === quadra && item[1] === lote)?.[2];
-
-            bolinhaSelecionada.dataset.quadra = quadra;
-            bolinhaSelecionada.dataset.lote = lote;
-            bolinhaSelecionada.classList.add(status);
-
-            document.getElementById("config-popup").style.display = "none";
-
-            fetch(API_URL, {
-                method: "POST",
-                body: JSON.stringify({ 
-                    quadra, 
-                    lote, 
-                    x: parseInt(bolinhaSelecionada.style.left), 
-                    y: parseInt(bolinhaSelecionada.style.top) 
-                })
-            });
-
-            bolinhaSelecionada = null;
-        }
-
-        function excluirBolinha() {
-            if (bolinhaSelecionada) {
-                bolinhaSelecionada.remove();
-                bolinhaSelecionada = null;
-            } else {
-                alert("Clique em uma bolinha para excluí-la.");
-            }
-        }
-
-        carregarPlanilha();
+        carregarDados();
     </script>
 
 </body>
 </html>
-
