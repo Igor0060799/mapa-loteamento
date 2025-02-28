@@ -34,7 +34,7 @@
             let lote = prompt("Informe o Lote:");
 
             if (quadra && lote) {
-                let response = await fetch("SUA_API_URL_AQUI", {
+                let response = await fetch("https://script.google.com/macros/s/AKfycbzAf87ZInbsjmvgCyxXVCFwcWSiMGdNIvdOLPL5DT2tj_2aeVlEFWAyLyc8oE2BvTO-/exec", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ quadra, lote, x, y })
