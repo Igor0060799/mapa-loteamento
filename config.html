@@ -99,7 +99,12 @@
                 console.log("🔄 Buscando dados da API...");
                 const response = await fetch(API_URL);
                 lotesData = await response.json();
-                console.log("✅ Dados recebidos:", lotesData);
+                console.log("✅ Dados recebidos:", lotesData);  // LOG PARA VERIFICAR OS DADOS
+
+                if (!Array.isArray(lotesData) || lotesData.length === 0) {
+                    console.error("❌ Nenhum dado válido recebido.");
+                    return;
+                }
 
                 let tbody = document.getElementById("planilha").querySelector("tbody");
                 tbody.innerHTML = "";
@@ -108,9 +113,7 @@
                 let lotesPorQuadra = {};
 
                 lotesData.forEach(lote => {
-                    let quadra = lote[0];
-                    let loteNum = lote[1];
-                    let status = lote[2];
+                    let [quadra, loteNum, status] = lote;
 
                     let tr = document.createElement("tr");
                     tr.innerHTML = `<td>${quadra}</td><td>${loteNum}</td><td>${status}</td>`;
@@ -195,11 +198,6 @@
             let quadra = document.getElementById("quadra").value;
             let lote = document.getElementById("lote").value;
 
-            if (!quadra || !lote) {
-                alert("Selecione a Quadra e o Lote!");
-                return;
-            }
-
             let status = lotesData.find(item => item[0] === quadra && item[1] === lote)?.[2];
 
             bolinhaSelecionada.dataset.quadra = quadra;
@@ -235,3 +233,4 @@
 
 </body>
 </html>
+
